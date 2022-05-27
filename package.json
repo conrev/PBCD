@@ -1,0 +1,20 @@
+{
+  "name": "PBCD",
+  "version": "1.0.0",
+  "description": "Automated Method for Generating Secondary Motion using Position Based Dynamics",
+  "main": "index.js",
+  "source": "src/index.html",
+  "author": "conrev",
+  "license": "MIT",
+  "private": false,
+  "dependencies": {
+    "parcel": "^2.6.0",
+    "three": "^0.140.2"
+  },
+   "scripts": {
+    "clean-dist": "rm -rf dist && mkdir dist",
+    "copy-assets": "cp -r assets/* dist",
+    "start": "yarn run clean-dist && yarn run copy-assets && parcel",
+    "build": "parcel build"
+  }
+}
