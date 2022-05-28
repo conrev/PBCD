@@ -16,7 +16,7 @@ var gPhysicsScene =
 {
     gravity : [0.0, -10.0, 0.0],
     dt : 1.0 / 60.0,
-    numSubsteps : 10,
+    numSubsteps : 5,
     paused: false,
     objects: [],				
 };
@@ -30,7 +30,7 @@ async function getData(url) {
 // ------------------------------------------------------------------
 async function initPhysics() 
 {
-    var meshData = await getData('ArmadilloTet.obj.json')
+    var meshData = await getData('SuzanneTet.obj.json')
     var body = new DeformableObject(meshData, gThreeScene);
     gPhysicsScene.objects.push(body); 
     document.getElementById("numTets").innerHTML = body.numTets;
