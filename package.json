@@ -15,6 +15,7 @@
     "clean-dist": "rm -rf dist && mkdir dist",
     "copy-assets": "cp -r assets/* dist",
     "start": "yarn run clean-dist && yarn run copy-assets && parcel",
+    "playground" :"yarn run clean-dist && yarn run copy-assets && parcel src/fbxloader.html",
     "build": "parcel build"
   }
 }

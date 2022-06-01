@@ -1,6 +1,11 @@
 import * as THREE from 'three'
+import * as Vector3 from '../utils/VectorOperations.js'
 
 export class DeformableObject {
+
+     notNaN(element, index, array) {
+        return !isNaN(element);
+      }
 
 	constructor(tetMesh, scene, edgeCompliance = 50.0, volCompliance = 0.0)
     {
@@ -9,6 +14,7 @@ export class DeformableObject {
         this.numParticles = tetMesh.vertices.length / 3;
         this.numTets = tetMesh.tetFaceIds.length / 4;
         this.pos = new Float32Array(tetMesh.vertices);
+
         this.prevPos = tetMesh.vertices.slice();
         this.vel = new Float32Array(3 * this.numParticles);
 
@@ -16,6 +22,7 @@ export class DeformableObject {
         this.edgeIds = tetMesh.edgeList;
         this.restVol = new Float32Array(this.numTets);
         this.edgeLengths = new Float32Array(this.edgeIds.length / 2);	
+        this.triIds = tetMesh.triFaceIds;
 
         this.invMass = new Float32Array(this.numParticles);
 
@@ -29,12 +36,17 @@ export class DeformableObject {
         this.grabInvMass = 0.0;
 
         this.initPhysics();
+        this.createDisplayMesh(scene);
 
-        // surface tri mesh
+        this.volIdOrder = [[1,3,2], [0,2,3], [0,3,1], [0,1,2]];
+                    
+    }
 
+    createDisplayMesh(scene){
+                // surface tri mesh
         var geometry = new THREE.BufferGeometry();
         geometry.setAttribute('position', new THREE.BufferAttribute(this.pos, 3));
-        geometry.setIndex(tetMesh.triFaceIds);
+        geometry.setIndex(this.triIds);
         var material = new THREE.MeshPhongMaterial({color: 0xF02000});
         material.flatShading = true;
         this.surfaceMesh = new THREE.Mesh(geometry, material);
@@ -42,16 +54,13 @@ export class DeformableObject {
         this.surfaceMesh.userData = this;
         this.surfaceMesh.layers.enable(1);
         scene.add(this.surfaceMesh);
-
-        this.volIdOrder = [[1,3,2], [0,2,3], [0,3,1], [0,1,2]];
-                    
     }
 
     translate(x, y, z)
     {
         for (var i = 0; i < this.numParticles; i++) {
-            vecAdd(this.pos,i, [x,y,z],0);
-            vecAdd(this.prevPos,i, [x,y,z],0);
+            Vector3.vecAdd(this.pos,i, [x,y,z],0);
+            Vector3.vecAdd(this.prevPos,i, [x,y,z],0);
         }
     }
 
@@ -68,15 +77,16 @@ export class DeformableObject {
         var id1 = this.tetIds[4 * nr + 1];
         var id2 = this.tetIds[4 * nr + 2];
         var id3 = this.tetIds[4 * nr + 3];
-        vecSetDiff(this.temp,0, this.pos,id1, this.pos,id0);
-        vecSetDiff(this.temp,1, this.pos,id2, this.pos,id0);
-        vecSetDiff(this.temp,2, this.pos,id3, this.pos,id0);
-        vecSetCross(this.temp,3, this.temp,0, this.temp,1);
-        return vecDot(this.temp,3, this.temp,2) / 6.0;
+        Vector3.vecSetDiff(this.temp,0, this.pos,id1, this.pos,id0);
+        Vector3.vecSetDiff(this.temp,1, this.pos,id2, this.pos,id0);
+        Vector3.vecSetDiff(this.temp,2, this.pos,id3, this.pos,id0);
+        Vector3.vecSetCross(this.temp,3, this.temp,0, this.temp,1);
+        return Vector3.vecDot(this.temp,3, this.temp,2) / 6.0;
     }
 
     initPhysics() 
     {
+
         this.invMass.fill(0.0);
         this.restVol.fill(0.0);
 
@@ -92,7 +102,7 @@ export class DeformableObject {
         for (var i = 0; i < this.edgeLengths.length; i++) {
             var id0 = this.edgeIds[2 * i];
             var id1 = this.edgeIds[2 * i + 1];
-            this.edgeLengths[i] = Math.sqrt(vecDistSquared(this.pos,id0, this.pos,id1));
+            this.edgeLengths[i] = Math.sqrt(Vector3.vecDistSquared(this.pos,id0, this.pos,id1));
         }
     }
 
@@ -101,12 +111,12 @@ export class DeformableObject {
         for (var i = 0; i < this.numParticles; i++) {
             if (this.invMass[i] == 0.0)
                 continue;
-            vecAdd(this.vel,i, gravity,0, dt);
-            vecCopy(this.prevPos,i, this.pos,i);
-            vecAdd(this.pos,i, this.vel,i, dt);
+            Vector3.vecAdd(this.vel,i, gravity,0, dt);
+            Vector3.vecCopy(this.prevPos,i, this.pos,i);
+            Vector3.vecAdd(this.pos,i, this.vel,i, dt);
             var y = this.pos[3 * i + 1];
             if (y < 0.0) {
-                vecCopy(this.pos,i, this.prevPos,i);
+                Vector3.vecCopy(this.pos,i, this.prevPos,i);
                 this.pos[3 * i + 1] = 0.0;
             }
         }
@@ -123,7 +133,7 @@ export class DeformableObject {
         for (var i = 0; i < this.numParticles; i++) {
             if (this.invMass[i] == 0.0)
                 continue;
-            vecSetDiff(this.vel,i, this.pos,i, this.prevPos,i, 1.0 / dt);
+            Vector3.vecSetDiff(this.vel,i, this.pos,i, this.prevPos,i, 0.995 / dt);
         }
         this.updateMeshes();
     }
@@ -140,16 +150,16 @@ export class DeformableObject {
             if (w == 0.0)
                 continue;
 
-            vecSetDiff(this.grads,0, this.pos,id0, this.pos,id1);
-            var len = Math.sqrt(vecLengthSquared(this.grads,0));
+            Vector3.vecSetDiff(this.grads,0, this.pos,id0, this.pos,id1);
+            var len = Math.sqrt(Vector3.vecLengthSquared(this.grads,0));
             if (len == 0.0)
                 continue;
-            vecScale(this.grads,0, 1.0 / len);
+            Vector3.vecScale(this.grads,0, 1.0 / len);
             var restLen = this.edgeLengths[i];
             var C = len - restLen;
             var s = -C / (w + alpha);
-            vecAdd(this.pos,id0, this.grads,0, s * w0);
-            vecAdd(this.pos,id1, this.grads,0, -s * w1);
+            Vector3.vecAdd(this.pos,id0, this.grads,0, s * w0);
+            Vector3.vecAdd(this.pos,id1, this.grads,0, -s * w1);
         }
     }
 
@@ -164,12 +174,12 @@ export class DeformableObject {
                 var id1 = this.tetIds[4 * i + this.volIdOrder[j][1]];
                 var id2 = this.tetIds[4 * i + this.volIdOrder[j][2]];
 
-                vecSetDiff(this.temp,0, this.pos,id1, this.pos,id0);
-                vecSetDiff(this.temp,1, this.pos,id2, this.pos,id0);
-                vecSetCross(this.grads,j, this.temp,0, this.temp,1);
-                vecScale(this.grads,j, 1.0/6.0);
+                Vector3.vecSetDiff(this.temp,0, this.pos,id1, this.pos,id0);
+                Vector3.vecSetDiff(this.temp,1, this.pos,id2, this.pos,id0);
+                Vector3.vecSetCross(this.grads,j, this.temp,0, this.temp,1);
+                Vector3.vecScale(this.grads,j, 1.0/6.0);
 
-                w += this.invMass[this.tetIds[4 * i + j]] * vecLengthSquared(this.grads,j);
+                w += this.invMass[this.tetIds[4 * i + j]] * Vector3.vecLengthSquared(this.grads,j);
             }
             if (w == 0.0)
                 continue;
@@ -181,7 +191,7 @@ export class DeformableObject {
 
             for (var j = 0; j < 4; j++) {
                 var id = this.tetIds[4 * i + j];
-                vecAdd(this.pos,id, this.grads,j, s * this.invMass[id])
+                Vector3.vecAdd(this.pos,id, this.grads,j, s * this.invMass[id])
             }
         }
     }
@@ -199,7 +209,7 @@ export class DeformableObject {
         var minD2 = Number.MAX_VALUE;
         this.grabId = -1;
         for (let i = 0; i < this.numParticles; i++) {
-            var d2 = vecDistSquared(p,0, this.pos,i);
+            var d2 = Vector3.vecDistSquared(p,0, this.pos,i);
             if (d2 < minD2) {
                 minD2 = d2;
                 this.grabId = i;
@@ -209,7 +219,7 @@ export class DeformableObject {
         if (this.grabId >= 0) {
             this.grabInvMass = this.invMass[this.grabId];
             this.invMass[this.grabId] = 0.0;
-            vecCopy(this.pos,this.grabId, p,0);	
+            Vector3.vecCopy(this.pos,this.grabId, p,0);	
         }
     }
 
@@ -217,7 +227,7 @@ export class DeformableObject {
     {
         if (this.grabId >= 0) {
             var p = [pos.x, pos.y, pos.z];
-            vecCopy(this.pos,this.grabId, p,0);
+            Vector3.vecCopy(this.pos,this.grabId, p,0);
         }
     }
 
@@ -226,69 +236,9 @@ export class DeformableObject {
         if (this.grabId >= 0) {
             this.invMass[this.grabId] = this.grabInvMass;
             var v = [vel.x, vel.y, vel.z];
-            vecCopy(this.vel,this.grabId, v,0);
+            Vector3.vecCopy(this.vel,this.grabId, v,0);
         }
         this.grabId = -1;
     }								
 }
 
-// ----- math on vector arrays -------------------------------------------------------------
-
-function vecSetZero(a,anr) {
-    anr *= 3;
-    a[anr++] = 0.0;
-    a[anr++] = 0.0;
-    a[anr]   = 0.0;
-}
-
-function vecScale(a,anr, scale) {
-    anr *= 3;
-    a[anr++] *= scale;
-    a[anr++] *= scale;
-    a[anr]   *= scale;
-}
-
-function vecCopy(a,anr, b,bnr) {
-    anr *= 3; bnr *= 3;
-    a[anr++] = b[bnr++]; 
-    a[anr++] = b[bnr++]; 
-    a[anr]   = b[bnr];
-}
-
-function vecAdd(a,anr, b,bnr, scale = 1.0) {
-    anr *= 3; bnr *= 3;
-    a[anr++] += b[bnr++] * scale; 
-    a[anr++] += b[bnr++] * scale; 
-    a[anr]   += b[bnr] * scale;
-}
-
-function vecSetDiff(dst,dnr, a,anr, b,bnr, scale = 1.0) {
-    dnr *= 3; anr *= 3; bnr *= 3;
-    dst[dnr++] = (a[anr++] - b[bnr++]) * scale;
-    dst[dnr++] = (a[anr++] - b[bnr++]) * scale;
-    dst[dnr]   = (a[anr] - b[bnr]) * scale;
-}
-
-function vecLengthSquared(a,anr) {
-    anr *= 3;
-    let a0 = a[anr], a1 = a[anr + 1], a2 = a[anr + 2];
-    return a0 * a0 + a1 * a1 + a2 * a2;
-}
-
-function vecDistSquared(a,anr, b,bnr) {
-    anr *= 3; bnr *= 3;
-    let a0 = a[anr] - b[bnr], a1 = a[anr + 1] - b[bnr + 1], a2 = a[anr + 2] - b[bnr + 2];
-    return a0 * a0 + a1 * a1 + a2 * a2;
-}	
-
-function vecDot(a,anr, b,bnr) {
-    anr *= 3; bnr *= 3;
-    return a[anr] * b[bnr] + a[anr + 1] * b[bnr + 1] + a[anr + 2] * b[bnr + 2];
-}	
-
-function vecSetCross(a,anr, b,bnr, c,cnr) {
-    anr *= 3; bnr *= 3; cnr *= 3;
-    a[anr++] = b[bnr + 1] * c[cnr + 2] - b[bnr + 2] * c[cnr + 1];
-    a[anr++] = b[bnr + 2] * c[cnr + 0] - b[bnr + 0] * c[cnr + 2];
-    a[anr]   = b[bnr + 0] * c[cnr + 1] - b[bnr + 1] * c[cnr + 0];
-}			

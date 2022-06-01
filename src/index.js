@@ -1,6 +1,7 @@
 import * as THREE from 'three' 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { DeformableObject } from './graphics/DeformableObject'
+import {CylinderObject} from './graphics/CyclinderObject'
 import { Grabber } from './graphics/Grabber'
 
 var gThreeScene;
@@ -14,9 +15,9 @@ var gMouseDown = false;
 
 var gPhysicsScene = 
 {
-    gravity : [0.0, -10.0, 0.0],
+    gravity : [0.0, -4.0, 0.0],
     dt : 1.0 / 60.0,
-    numSubsteps : 5,
+    numSubsteps : 10,
     paused: false,
     objects: [],				
 };
@@ -30,8 +31,8 @@ async function getData(url) {
 // ------------------------------------------------------------------
 async function initPhysics() 
 {
-    var meshData = await getData('SuzanneTet.obj.json')
-    var body = new DeformableObject(meshData, gThreeScene);
+    var meshData = await getData('CyclTet.obj.json')
+    var body = new CylinderObject(meshData, gThreeScene);
     gPhysicsScene.objects.push(body); 
     document.getElementById("numTets").innerHTML = body.numTets;
 }
@@ -48,8 +49,12 @@ function simulate()
         
     var sdt = gPhysicsScene.dt / gPhysicsScene.numSubsteps;
 
-    for (var step = 0; step < gPhysicsScene.numSubsteps; step++) {
+    for (var i = 0; i < gPhysicsScene.objects.length; i++) 
+         gPhysicsScene.objects[i].animateBones();
 
+
+    for (var step = 0; step < gPhysicsScene.numSubsteps; step++) {
+        
         for (var i = 0; i < gPhysicsScene.objects.length; i++) 
             gPhysicsScene.objects[i].preSolve(sdt, gPhysicsScene.gravity);
         
@@ -58,8 +63,11 @@ function simulate()
 
         for (var i = 0; i < gPhysicsScene.objects.length; i++) 
             gPhysicsScene.objects[i].postSolve(sdt);
+        
+
 
     }
+    
 
     gGrabber.increaseTime(gPhysicsScene.dt);
 }
@@ -129,7 +137,7 @@ function initThreeScene()
     
     // Camera
             
-    gCamera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.01, 100);
+    gCamera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 100);
     gCamera.position.set(0, 1, 2);
     gCamera.updateMatrixWorld();	
 
