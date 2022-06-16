@@ -133,7 +133,7 @@ export class DeformableObject {
         for (var i = 0; i < this.numParticles; i++) {
             if (this.invMass[i] == 0.0)
                 continue;
-            Vector3.vecSetDiff(this.vel,i, this.pos,i, this.prevPos,i, 0.995 / dt);
+            Vector3.vecSetDiff(this.vel,i, this.pos,i, this.prevPos,i, 0.999 / dt);
         }
         this.updateMeshes();
     }

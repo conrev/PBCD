@@ -15,9 +15,9 @@ var gMouseDown = false;
 
 var gPhysicsScene = 
 {
-    gravity : [0.0, -4.0, 0.0],
+    gravity : [0.0, 0.0, 0.0],
     dt : 1.0 / 60.0,
-    numSubsteps : 10,
+    numSubsteps : 5,
     paused: false,
     objects: [],				
 };
@@ -33,6 +33,8 @@ async function initPhysics()
 {
     var meshData = await getData('CyclTet.obj.json')
     var body = new CylinderObject(meshData, gThreeScene);
+    // var meshData = await getData('SuzanneTet.obj.json')
+    // let body = new DeformableObject(meshData, gThreeScene)
     gPhysicsScene.objects.push(body); 
     document.getElementById("numTets").innerHTML = body.numTets;
 }
