@@ -1,7 +1,6 @@
 import * as THREE from 'three'
 import { DeformableObject } from './DeformableObject';
 import * as Vector3 from '../utils/VectorOperations.js'
-import { BooleanKeyframeTrack, MeshDistanceMaterial } from 'three';
 
 export class CylinderObject extends DeformableObject {
 
@@ -30,7 +29,7 @@ export class CylinderObject extends DeformableObject {
         this.surfaceMesh.layers.enable(1);
         this.surfaceMesh.helper =  new THREE.SkeletonHelper( mesh );
         this.surfaceMesh.helper.material.linewidth = 2;
-
+        this.hasAnimation = true;
 
         scene.add(this.surfaceMesh.helper);
 
@@ -162,7 +161,6 @@ export class CylinderObject extends DeformableObject {
     setupBoneConstraint(scene) {
 
         scene.updateMatrixWorld();
-        const boneTransform = this.surfaceMesh.helper.geometry.attributes.position.array;
         
         this.closestBoneDistance = new Float32Array(this.numParticles);
         this.closestBone = new Float32Array(this.numParticles);
@@ -195,8 +193,6 @@ export class CylinderObject extends DeformableObject {
             this.closestBone[i] = boneIdx;
         
         }
-        console.log(this.closestBoneDistance);
-        console.log(this.closestBone);
     }
     
     solveBinding(compliance, dt){

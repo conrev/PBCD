@@ -1,13 +1,11 @@
 import * as THREE from 'three'
+import { damp } from 'three/src/math/MathUtils.js';
 import * as Vector3 from '../utils/VectorOperations.js'
 
 export class DeformableObject {
 
-     notNaN(element, index, array) {
-        return !isNaN(element);
-      }
 
-	constructor(tetMesh, scene, edgeCompliance = 50.0, volCompliance = 0.0)
+	constructor(tetMesh, scene, edgeCompliance = 50.0, volCompliance = 0.0, dampingFactor = 1.0)
     {
         // physics
 
@@ -28,6 +26,7 @@ export class DeformableObject {
 
         this.edgeCompliance = edgeCompliance;
         this.volCompliance = volCompliance;
+        this.dampingFactor = dampingFactor;
 
         this.temp = new Float32Array(4 * 3);
         this.grads = new Float32Array(4 * 3);
@@ -53,6 +52,8 @@ export class DeformableObject {
         this.surfaceMesh.geometry.computeVertexNormals();
         this.surfaceMesh.userData = this;
         this.surfaceMesh.layers.enable(1);
+        this.hasAnimation = false;
+
         scene.add(this.surfaceMesh);
     }
 
@@ -133,7 +134,7 @@ export class DeformableObject {
         for (var i = 0; i < this.numParticles; i++) {
             if (this.invMass[i] == 0.0)
                 continue;
-            Vector3.vecSetDiff(this.vel,i, this.pos,i, this.prevPos,i, 0.999 / dt);
+            Vector3.vecSetDiff(this.vel,i, this.pos,i, this.prevPos,i, this.dampingFactor / dt);
         }
         this.updateMeshes();
     }

@@ -10,6 +10,8 @@ var gCamera;
 var gCameraControl;
 var gGrabber;
 var gMouseDown = false;
+var executeSkinning = false;
+
 
 // ------------------------------------------------------------------
 
@@ -17,7 +19,7 @@ var gPhysicsScene =
 {
     gravity : [0.0, -10.0, 0.0],
     dt : 1.0 / 60.0,
-    numSubsteps : 10,
+    numSubsteps : 5,
     paused: false,
     objects: [],				
 };
@@ -31,10 +33,19 @@ async function getData(url) {
 // ------------------------------------------------------------------
 async function initPhysics() 
 {
+
+    var meshData = await getData('SuzanneTet.obj.json')
+    let body = new DeformableObject(meshData, gThreeScene)
+
+    document.getElementById("numTets").innerHTML = body.numTets;
+
+    gPhysicsScene.objects.push(body); 
+}
+
+async function initCylinder(){
     var meshData = await getData('CyclTet.obj.json')
     var body = new CylinderObject(meshData, gThreeScene);
-     //var meshData = await getData('SuzanneTet.obj.json')
-     //let body = new DeformableObject(meshData, gThreeScene)
+
     gPhysicsScene.objects.push(body); 
     document.getElementById("numTets").innerHTML = body.numTets;
 }
@@ -52,8 +63,8 @@ function simulate()
     var sdt = gPhysicsScene.dt / gPhysicsScene.numSubsteps;
 
     for (var i = 0; i < gPhysicsScene.objects.length; i++) 
-        gPhysicsScene.objects[i].animateBones();
-
+        if(gPhysicsScene.objects[i].hasAnimation)
+            gPhysicsScene.objects[i].animateBones();
 
     for (var step = 0; step < gPhysicsScene.numSubsteps; step++) {
         
@@ -181,10 +192,31 @@ function onPointer( evt )
     }
 }	
 
-document.getElementById("complianceSlider").oninput = function() {
+document.getElementById("complianceSlider").oninput = () => {
     for (var i = 0; i < gPhysicsScene.objects.length; i++) 
         gPhysicsScene.objects[i].edgeCompliance = this.value * 50.0;
 }
+
+document.getElementById("dampingSlider").oninput = () => {
+    for (var i = 0; i < gPhysicsScene.objects.length; i++) 
+    {
+        gPhysicsScene.objects[i].dampingFactor = this.value / 100.0;
+    }    
+}
+
+document.getElementById("spawnPhysicsObjectButton").onclick = () => {
+    initPhysics();
+};
+
+
+document.getElementById("spawnAnimatedObjectButton").onclick = () => {
+    initCylinder();
+};
+
+
+
+
+
 
 // ------------------------------------------------------
 
@@ -237,5 +269,4 @@ function update() {
 //loadMesh();
 initThreeScene();
 onWindowResize();
-initPhysics();
-update();
+update();  
