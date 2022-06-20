@@ -13,8 +13,6 @@ def extract_faces(str):
     vertexId, vertexTexture, vertexNormal = str.split("/")
     return int(vertexId)-1 # OBJ is 1 indexed, Programming Languages are 0 Indexed
 
-    #return int(vertexId),int(vertexTexture),int(vertexNormal)
-
 def build_unique_edges(faces_list, quadMesh=False):
     step = 4 if quadMesh else 3
     
@@ -22,7 +20,6 @@ def build_unique_edges(faces_list, quadMesh=False):
 
     for i in range(0,len(faces_list),step):
         subset = sorted(faces_list[i:i+step])
-        #print(list(combinations(subset,2)))
         edges.update(list(combinations(subset,2)))
 
     edges = sorted(edges,key=lambda x: (x[0],x[1]))
@@ -48,17 +45,10 @@ def read_OBJ(volumetric_file, surface_file):
                     result["vertices"].extend([float(x),float(y),float(z)])
                 else:
                     pass
-                    # if the future we need to map textures and vertex normals
             if line[0] == 'f':
                 components = line.replace('\n','').split(" ")
                 if len(components) == 5:
-                    # Quads OBJ
                     result["tetFaceIds"].extend(list(map(extract_faces,components[1:])))
-                #elif len(components) == 4:
-                    # Tris OBJ
-                    #result["triFaceIds"].extend(list(map(extract_faces,components[1:])))
-                    #print(v1,v2,v3)
-                    #result["triFaceIds"].extend([int(v1),int(v2),int(v3)])
     f.close()
     
     with open(surface_file) as f:
@@ -92,16 +82,13 @@ def read_MESH(mesh_file):
         print(vertsCount)
         for i in range(vertsCount):
             pass    
-        
-        triIndex, triCount = 0 
-
 
 
 
 
 if __name__ == "__main__":
     result = {}
-
+    
     if len(sys.argv) <= 1:
         sys.exit("This script requires at least one argument, the path to the Mesh File")
     
