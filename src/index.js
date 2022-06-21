@@ -10,7 +10,6 @@ var gCamera;
 var gCameraControl;
 var gGrabber;
 var gMouseDown = false;
-var executeSkinning = false;
 
 
 // ------------------------------------------------------------------
@@ -192,24 +191,21 @@ function onPointer( evt )
     }
 }	
 
-document.getElementById("complianceSlider").oninput = () => {
+document.getElementById("complianceSlider").oninput = function () {
     for (var i = 0; i < gPhysicsScene.objects.length; i++) 
         gPhysicsScene.objects[i].edgeCompliance = this.value * 50.0;
 }
 
-document.getElementById("dampingSlider").oninput = () => {
+document.getElementById("dampingSlider").oninput = function ()  {
     for (var i = 0; i < gPhysicsScene.objects.length; i++) 
-    {
         gPhysicsScene.objects[i].dampingFactor = this.value / 100.0;
-    }    
 }
 
-document.getElementById("spawnPhysicsObjectButton").onclick = () => {
+document.getElementById("spawnPhysicsObjectButton").onclick = function () {
     initPhysics();
 };
 
-
-document.getElementById("spawnAnimatedObjectButton").onclick = () => {
+document.getElementById("spawnAnimatedObjectButton").onclick = function () {
     initCylinder();
 };
 
