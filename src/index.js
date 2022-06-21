@@ -33,7 +33,7 @@ async function getData(url) {
 async function initPhysics() 
 {
 
-    var meshData = await getData('SuzanneTet.obj.json')
+    var meshData = await getData('assets/SuzanneTet.obj.json')
     let body = new DeformableObject(meshData, gThreeScene)
 
     document.getElementById("numTets").innerHTML = body.numTets;
@@ -42,7 +42,7 @@ async function initPhysics()
 }
 
 async function initCylinder(){
-    var meshData = await getData('CyclTet.obj.json')
+    var meshData = await getData('assets/CyclTet.obj.json')
     var body = new CylinderObject(meshData, gThreeScene);
 
     gPhysicsScene.objects.push(body); 
@@ -196,7 +196,7 @@ document.getElementById("complianceSlider").oninput = function () {
         gPhysicsScene.objects[i].edgeCompliance = this.value * 50.0;
 }
 
-document.getElementById("dampingSlider").oninput = function ()  {
+document.getElementById("dampingSlider").oninput = function () {
     for (var i = 0; i < gPhysicsScene.objects.length; i++) 
         gPhysicsScene.objects[i].dampingFactor = this.value / 100.0;
 }

@@ -11,8 +11,8 @@
     "three": "^0.140.2"
   },
    "scripts": {
-    "clean-docs": "rm -rf docs && mkdir docs",
-    "copy-assets": "cp -r assets/* docs",
+    "clean-docs": "rm -rf docs && mkdir docs && mkdir docs/assets",
+    "copy-assets": "cp -r assets/* docs/assets/",
     "start": "yarn run clean-docs && yarn run copy-assets && parcel",
     "build-gh-pages": "yarn run clean-docs && yarn run copy-assets && parcel build src/index.html --public-url ./ --dist-dir docs",
     "playground" :"yarn run clean-docs && yarn run copy-assets && parcel src/fbxloader.html",
