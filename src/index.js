@@ -1,7 +1,8 @@
 import * as THREE from 'three' 
+import Stats from 'three/examples/jsm/libs/stats.module'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { DeformableObject } from './graphics/DeformableObject'
-import {CylinderObject} from './graphics/CyclinderObject'
+import { CylinderObject } from './graphics/CyclinderObject'
 import { Grabber } from './graphics/Grabber'
 
 var gThreeScene;
@@ -10,7 +11,7 @@ var gCamera;
 var gCameraControl;
 var gGrabber;
 var gMouseDown = false;
-
+var gStatsMonitor;
 
 // ------------------------------------------------------------------
 
@@ -36,9 +37,15 @@ async function initPhysics()
     var meshData = await getData('assets/SuzanneTet.obj.json')
     let body = new DeformableObject(meshData, gThreeScene)
 
-    document.getElementById("numTets").innerHTML = body.numTets;
 
     gPhysicsScene.objects.push(body); 
+
+    var numTets = 0;
+    for (var i = 0; i < gPhysicsScene.objects.length; i++)
+        numTets += gPhysicsScene.objects[i].numTets;
+    
+    document.getElementById("numTets").innerHTML = numTets;
+    
 }
 
 async function initCylinder(){
@@ -46,7 +53,13 @@ async function initCylinder(){
     var body = new CylinderObject(meshData, gThreeScene);
 
     gPhysicsScene.objects.push(body); 
-    document.getElementById("numTets").innerHTML = body.numTets;
+
+    var numTets = 0;
+    for (var i = 0; i < gPhysicsScene.objects.length; i++)
+        numTets += gPhysicsScene.objects[i].numTets;
+    
+    document.getElementById("numTets").innerHTML = numTets;
+
 }
 
 // ------------------------------------------------------------------
@@ -165,6 +178,11 @@ function initThreeScene()
     container.addEventListener( 'pointerdown', onPointer, false );
     container.addEventListener( 'pointermove', onPointer, false );
     container.addEventListener( 'pointerup', onPointer, false );
+
+    // performance monitoring
+    
+    gStatsMonitor = Stats();
+    container.appendChild(gStatsMonitor.domElement);
 }
 
 function onPointer( evt ) 
@@ -199,6 +217,10 @@ document.getElementById("complianceSlider").oninput = function () {
 document.getElementById("dampingSlider").oninput = function () {
     for (var i = 0; i < gPhysicsScene.objects.length; i++) 
         gPhysicsScene.objects[i].dampingFactor = this.value / 100.0;
+}
+
+document.getElementById("subStepSlider").oninput = function () {
+    gPhysicsScene.numSubsteps = this.value;
 }
 
 document.getElementById("spawnPhysicsObjectButton").onclick = function () {
@@ -259,6 +281,7 @@ function newBody() {
 function update() {
     simulate();
     gRenderer.render(gThreeScene, gCamera);
+    gStatsMonitor.update()
     requestAnimationFrame(update);
 }
 
