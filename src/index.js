@@ -88,12 +88,9 @@ function simulate()
 
         for (var i = 0; i < gPhysicsScene.objects.length; i++) 
             gPhysicsScene.objects[i].postSolve(sdt);
-        
-
 
     }
     
-
     gGrabber.increaseTime(gPhysicsScene.dt);
 }
 
@@ -230,11 +227,6 @@ document.getElementById("spawnPhysicsObjectButton").onclick = function () {
 document.getElementById("spawnAnimatedObjectButton").onclick = function () {
     initCylinder();
 };
-
-
-
-
-
 
 // ------------------------------------------------------
 

@@ -27,11 +27,11 @@ export class CylinderObject extends DeformableObject {
         this.surfaceMesh.geometry.computeVertexNormals();
         this.surfaceMesh.userData = this;
         this.surfaceMesh.layers.enable(1);
-        this.surfaceMesh.helper =  new THREE.SkeletonHelper( mesh );
-        this.surfaceMesh.helper.material.linewidth = 2;
+        //this.surfaceMesh.helper =  new THREE.SkeletonHelper( mesh );
+        //this.surfaceMesh.helper.material.linewidth = 2;
         this.hasAnimation = true;
 
-        scene.add(this.surfaceMesh.helper);
+        //scene.add(this.surfaceMesh.helper);
 
         scene.add( this.surfaceMesh );
 
@@ -219,11 +219,10 @@ export class CylinderObject extends DeformableObject {
             if (len == 0.0)
                 continue;
             let C = len - restLen;
-            let s = -C / (alpha);
             //console.log(this.grads);
 
             //console.log(this.grads);
-            Vector3.vecAdd(this.pos,i, this.grads,0, s);    
+            Vector3.vecAdd(this.pos,i, this.grads,0, - C / w);    
         }
         //compute form all bones to all points;
         //find the closest bone;
@@ -259,9 +258,8 @@ export class CylinderObject extends DeformableObject {
 
     solve(dt)
     {
-
         this.solveBinding(this.edgeCompliance, dt);
-        this.solveEdges(this.edgeCompliance, dt);
+        this.solveEdges(15.0, dt);
         this.solveVolumes(this.volCompliance, dt);
     }
 
