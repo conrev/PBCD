@@ -61,11 +61,7 @@ async function initCylinder(){
 function simulate() 
 {
     
-    if (gPhysicsScene.paused){
-        console.log("paused")
-        return;
-    
-    }
+        
         
     var sdt = gPhysicsScene.dt / gPhysicsScene.numSubsteps;
 
@@ -73,6 +69,10 @@ function simulate()
         if(gPhysicsScene.objects[i].hasAnimation)
             gPhysicsScene.objects[i].animateBones();
 
+    if (gPhysicsScene.paused)
+        return;
+    
+            
     for (var step = 0; step < gPhysicsScene.numSubsteps; step++) {
         
         for (var i = 0; i < gPhysicsScene.objects.length; i++) 
@@ -226,10 +226,16 @@ function initGUI() {
         edgeCompliance : 50,
         spawnPhysicsObject: initPhysics,
         spawnAnimatedObject: initCylinder,
+        pausePhysics: false 
     }
     
     panel.add(elements, 'spawnPhysicsObject').name('Spawn Pure Physics Object');
     panel.add(elements, 'spawnAnimatedObject').name('Spawn Preanimated Object');
+    panel.add(elements, 'pausePhysics').name('Pause Physics Simulation').listen()
+        .onChange( value => {
+            gPhysicsScene.paused = value;
+        } 
+    );
     panel.add(elements, 'subStep', 1, 10, 1).name('Substeps per Iteration').listen()
         .onChange( value => {
             gPhysicsScene.numSubsteps = value;
