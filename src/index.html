@@ -18,15 +18,10 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 			body {
 				font-family: verdana; 
 				font-size: 15px;
-			}			
-			.button {
-			background-color: #606060;
-			border: none;
-			color: white;
-			padding: 15px 32px;
-			font-size: 16px;
-			margin: 4px 2px;
-			cursor: pointer;
+			}
+
+			canvas {
+				display: block;
 			}
 
 			#container {
@@ -34,23 +29,19 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 			}
 
 			#container > div {
-			position: absolute !important;  
+				position: absolute !important;  
+			}
+
+			.lil-gui {
+				right: 0px;
+				top: 0px;
 			}
 			
 		</style>	
 	</head>
 	
 	<body>
-		<span id = "numTets">0</span> tets&nbsp;&nbsp;
-		Compliance:
-		<input type = "range" min = "0" max = "10" value = "1" id = "complianceSlider" class = "slider">
-		Energy Preservation:
-		<input type = "range" min = "1" max = "100" value = "100" id = "dampingSlider" class = "slider">  
-		Substep per Frame:
-		<input type = "range" min = "1" max = "10" value = "5" id = "subStepSlider" class = "slider"> 
-		<button class = "button" id = "spawnPhysicsObjectButton">Spawn Physics Object</button>
-		<button class = "button" id = "spawnAnimatedObjectButton">Spawn Animated Object</button>
-		<br><br>		
+				
         <div id="container"></div>
 
 		<script src='index.js' type="module"></script>

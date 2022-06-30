@@ -49,6 +49,7 @@ export class DeformableObject {
         var material = new THREE.MeshPhongMaterial({color: 0xF02000});
         material.flatShading = true;
         this.surfaceMesh = new THREE.Mesh(geometry, material);
+        this.surfaceMesh.castShadow = true;
         this.surfaceMesh.geometry.computeVertexNormals();
         this.surfaceMesh.userData = this;
         this.surfaceMesh.layers.enable(1);
