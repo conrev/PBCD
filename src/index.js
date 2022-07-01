@@ -2,21 +2,25 @@ import * as THREE from 'three'
 import Stats from 'three/examples/jsm/libs/stats.module'
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
+import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
+import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js'
+import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
 import { DeformableObject } from './graphics/DeformableObject'
 import { CylinderObject } from './graphics/CyclinderObject'
 import { Grabber } from './graphics/Grabber'
 
-var gThreeScene;
-var gRenderer;
-var gCamera;
-var gCameraControl;
-var gGrabber;
-var gMouseDown = false;
-var gStatsMonitor;
+let gThreeScene;
+let gRenderer;
+let gComposer;
+let gCamera;
+let gCameraControl;
+let gGrabber;
+let gMouseDown = false;
+let gStatsMonitor;
 
 // ------------------------------------------------------------------
 
-var gPhysicsScene = 
+let gPhysicsScene = 
 {
     gravity : [0.0, -10.0, 0.0],
     dt : 1.0 / 60.0,
@@ -27,32 +31,27 @@ var gPhysicsScene =
 
 async function getData(url) {
     const response = await fetch(url);
-    //console.log(response.json())
     return response.json();
 }
 
 // ------------------------------------------------------------------
-async function initPhysics() 
-{
-    var meshData = await getData('assets/SuzanneTet.obj.json')
+async function initPhysics() {
+    let meshData = await getData('assets/SuzanneTet.obj.json')
     let body = new DeformableObject(meshData, gThreeScene)
-
 
     gPhysicsScene.objects.push(body); 
 
-    var numTets = 0;
-    for (var i = 0; i < gPhysicsScene.objects.length; i++)
+    for (let i = 0; i < gPhysicsScene.objects.length; i++)
         numTets += gPhysicsScene.objects[i].numTets;  
 }
 
-async function initCylinder(){
-    var meshData = await getData('assets/CyclTet.obj.json')
-    var body = new CylinderObject(meshData, gThreeScene);
+async function initCylinder() {
+    let meshData = await getData('assets/CyclTet.obj.json')
+    let body = new CylinderObject(meshData, gThreeScene);
 
     gPhysicsScene.objects.push(body); 
 
-    var numTets = 0;
-    for (var i = 0; i < gPhysicsScene.objects.length; i++)
+    for (let i = 0; i < gPhysicsScene.objects.length; i++)
         numTets += gPhysicsScene.objects[i].numTets;
 
 }
@@ -60,28 +59,27 @@ async function initCylinder(){
 // ------------------------------------------------------------------
 function simulate() 
 {
-    
         
-        
-    var sdt = gPhysicsScene.dt / gPhysicsScene.numSubsteps;
+    let sdt = gPhysicsScene.dt / gPhysicsScene.numSubsteps;
 
-    for (var i = 0; i < gPhysicsScene.objects.length; i++) 
+    for (let i = 0; i < gPhysicsScene.objects.length; i++) 
         if(gPhysicsScene.objects[i].hasAnimation)
             gPhysicsScene.objects[i].animateBones();
 
+    // If paused, dont continue to next step
+
     if (gPhysicsScene.paused)
         return;
-    
-            
-    for (var step = 0; step < gPhysicsScene.numSubsteps; step++) {
+               
+    for (let step = 0; step < gPhysicsScene.numSubsteps; step++) {
         
-        for (var i = 0; i < gPhysicsScene.objects.length; i++) 
+        for (let i = 0; i < gPhysicsScene.objects.length; i++) 
             gPhysicsScene.objects[i].preSolve(sdt, gPhysicsScene.gravity);
         
-        for (var i = 0; i < gPhysicsScene.objects.length; i++) 
+        for (let i = 0; i < gPhysicsScene.objects.length; i++) 
             gPhysicsScene.objects[i].solve(sdt);
 
-        for (var i = 0; i < gPhysicsScene.objects.length; i++) 
+        for (let i = 0; i < gPhysicsScene.objects.length; i++) 
             gPhysicsScene.objects[i].postSolve(sdt);
 
     }
@@ -97,24 +95,11 @@ function initThreeScene()
     
     // Lights
     gThreeScene.background = new THREE.Color( 0xa0a0a0 );
-    gThreeScene.fog  = new THREE.Fog( 0xa0a0a0, 10, 500);
+    gThreeScene.fog  = new THREE.Fog( 0xa0a0a0, 1, 50);
     
     const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
     hemiLight.position.set( 0, 20, 0 );
     gThreeScene.add( hemiLight );
-
-    /*
-    var spotLight = new THREE.SpotLight( 0xffffff );
-    spotLight.angle = Math.PI / 4;
-    spotLight.penumbra = 0.2;
-    spotLight.position.set( 2, 3, 3 );
-    spotLight.castShadow = true;
-    spotLight.shadow.camera.near = 3;
-    spotLight.shadow.camera.far = 10;
-    spotLight.shadow.mapSize.width = 1024;
-    spotLight.shadow.mapSize.height = 1024;
-    gThreeScene.add( spotLight );
-    */
 
     const dirLight = new THREE.DirectionalLight( 0xffffff );
     dirLight.position.set( -3 , 10, 3 );
@@ -127,37 +112,16 @@ function initThreeScene()
     dirLight.shadow.camera.far = 40;
     gThreeScene.add( dirLight );
 
-    // var dirLight = new THREE.DirectionalLight( 0x55505a, 1 );
-    // dirLight.position.set( 0, 3, 0 );
-    // dirLight.castShadow = true;
-    // dirLight.shadow.camera.near = 1;
-    // dirLight.shadow.camera.far = 10;
-
-    // dirLight.shadow.camera.right = 1;
-    // dirLight.shadow.camera.left = - 1;
-    // dirLight.shadow.camera.top	= 1;
-    // dirLight.shadow.camera.bottom = - 1;
-
-    // dirLight.shadow.mapSize.width = 1024;
-    // dirLight.shadow.mapSize.height = 1024;
-
-    
     // Geometry
 
-    var ground = new THREE.Mesh(
-        new THREE.PlaneBufferGeometry( 20, 20, 1, 1 ),
+    const ground = new THREE.Mesh(
+        new THREE.PlaneBufferGeometry( 100, 100, 1, 1 ),
         new THREE.MeshPhongMaterial( { color: 0xa0adaf, shininess: 150 } )
     );				
 
     ground.rotation.x = - Math.PI / 2; // rotates X/Y to X/Z
     ground.receiveShadow = true;
     gThreeScene.add( ground );
-    
-    var helper = new THREE.GridHelper( 20, 20 );
-    helper.material.opacity = 1.0;
-    helper.material.transparent = true;
-    helper.position.set(0, 0.002, 0);
-    //gThreeScene.add( helper );				
     
     // Renderer
 
@@ -167,7 +131,7 @@ function initThreeScene()
     gRenderer.setSize( window.innerWidth, window.innerHeight );
     window.addEventListener( 'resize', onWindowResize, false );
     container.appendChild( gRenderer.domElement );
-    
+
     // Camera
             
     gCamera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -180,6 +144,22 @@ function initThreeScene()
     gCameraControl = new OrbitControls(gCamera, gRenderer.domElement);
     gCameraControl.zoomSpeed = 2.0;
     gCameraControl.panSpeed = 0.4;
+    
+    // PostProcessing
+
+    const renderPass = new RenderPass( gThreeScene, gCamera );
+    const bokehPass = new BokehPass ( gThreeScene, gCamera, {
+        focus : 0.5 ,
+        aperture :0.005,
+        maxblur : 0.01,
+        width : window.innerWidth,
+        height : window.innerHeight
+    })
+
+    gComposer = new EffectComposer( gRenderer );
+
+    gComposer.addPass(renderPass);
+    //gComposer.addPass(bokehPass);
 
     // grabber
 
@@ -192,6 +172,8 @@ function initThreeScene()
     
     gStatsMonitor = Stats();
     container.appendChild(gStatsMonitor.domElement);
+
+
 }
 
 function onPointer( evt ) 
@@ -219,7 +201,7 @@ function onPointer( evt )
 }	
 
 function initGUI() {
-    const panel = new GUI({container:container})
+    const panel = new GUI();
 
     const elements = {
         subStep : 5,
@@ -243,8 +225,8 @@ function initGUI() {
     );
     panel.add(elements, 'edgeCompliance', 0, 500, 50).name('Edge Compliance').listen()
         .onChange( value => {
-            for (var i = 0; i < gPhysicsScene.objects.length; i++) 
-              gPhysicsScene.objects[i].edgeCompliance = value * 50.0;
+            for (let i = 0; i < gPhysicsScene.objects.length; i++) 
+              gPhysicsScene.objects[i].edgeCompliance = value;
         } 
     );
 }
@@ -252,7 +234,6 @@ function initGUI() {
 // ------------------------------------------------------
 
 function onWindowResize() {
-
     gCamera.aspect = window.innerWidth / window.innerHeight;
     gCamera.updateProjectionMatrix();
     gRenderer.setSize( window.innerWidth, window.innerHeight );
@@ -262,7 +243,7 @@ function onWindowResize() {
 
 function update() {
     simulate();
-    gRenderer.render(gThreeScene, gCamera);
+    gComposer.render(gPhysicsScene.dt);
     gStatsMonitor.update()
     requestAnimationFrame(update);
 }

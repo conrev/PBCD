@@ -122,8 +122,6 @@ export class CylinderObject extends DeformableObject {
             this.surfaceMesh.skeleton.bones[ i ].rotation.z = Math.sin( time ) * 2 / this.surfaceMesh.skeleton.bones.length;
 
         }
-
-        
        
     }
 

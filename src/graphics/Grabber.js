@@ -40,8 +40,6 @@ export class Grabber {
                 this.prevPos.copy(pos);
                 this.vel.set(0.0, 0.0, 0.0);
                 this.time = 0.0;
-              //  if (gPhysicsScene.paused)
-              //      run();
             }
         }
     }
