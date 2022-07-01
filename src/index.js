@@ -236,7 +236,7 @@ function initGUI() {
 function onWindowResize() {
     gCamera.aspect = window.innerWidth / window.innerHeight;
     gCamera.updateProjectionMatrix();
-    gRenderer.setSize( window.innerWidth, window.innerHeight );
+    gComposer.setSize( window.innerWidth, window.innerHeight );
 }
 
 // make browser to call us repeatedly -----------------------------------

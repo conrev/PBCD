@@ -27,14 +27,9 @@ export class CylinderObject extends DeformableObject {
         this.surfaceMesh.geometry.computeVertexNormals();
         this.surfaceMesh.userData = this;
         this.surfaceMesh.layers.enable(1);
-        //this.surfaceMesh.helper =  new THREE.SkeletonHelper( mesh );
-        //this.surfaceMesh.helper.material.linewidth = 2;
         this.hasAnimation = true;
 
-        //scene.add(this.surfaceMesh.helper);
-
         scene.add( this.surfaceMesh );
-
         this.setupBoneConstraint(scene);
 
     }
@@ -93,7 +88,7 @@ export class CylinderObject extends DeformableObject {
 
     }
 
-    createMesh( geometry, bones, scene) {
+    createMesh( geometry, bones ) {
 
         const material = new THREE.MeshPhongMaterial( {
             color: 0x156289,
@@ -127,6 +122,11 @@ export class CylinderObject extends DeformableObject {
 
     computeBoneProjection(pointId, boneId) {
 
+        // Compute the projection of a point to a bone 
+        // (which is defined by a vector of itself and its parents)
+        // We do this by computing a projection of a point (vector) to a line(defined by two vectors)
+        // and clamp to result so that the resulting projection point go past the line
+
         const boneVector = new THREE.Vector3();
         const parentBoneVector = new THREE.Vector3();
         const particleVec = new THREE.Vector3();
@@ -137,9 +137,14 @@ export class CylinderObject extends DeformableObject {
         boneVector.setFromMatrixPosition(this.bones[boneId].matrixWorld);
         parentBoneVector.setFromMatrixPosition(this.bones[boneId].parent.matrixWorld);
 
+        // Projection of a point to a line:
+        // C (point), A - B (line)
+        // C-A
         startToParticleVec.subVectors(particleVec,parentBoneVector);
+        // B-A
         boneVector.sub(parentBoneVector);
 
+        // Proj(C-A -> B-A)
         let projection = startToParticleVec.projectOnVector(boneVector);
 
         if (projection.dot(boneVector) <0)
@@ -149,7 +154,6 @@ export class CylinderObject extends DeformableObject {
         else 
             projection.add(parentBoneVector);     // projection is between a and b
 
-
             // console.log(this.surfaceMesh.geometry.attributes.position.array[i*3]+","+this.surfaceMesh.geometry.attributes.position.array[i*3+1]+","+this.surfaceMesh.geometry.attributes.position.array[i*3+2])
         return new Float32Array([projection.x, projection.y, projection.z]);
 
@@ -157,6 +161,9 @@ export class CylinderObject extends DeformableObject {
     }
 
     setupBoneConstraint(scene) {
+        // This method set up bind constraint by computing distances of all vertex to its nearest bones
+        // (via vector projection)
+        // This precomputed distance act as "rest distance", or the distance our constraint will maintain
 
         scene.updateMatrixWorld();
         
@@ -170,13 +177,13 @@ export class CylinderObject extends DeformableObject {
 
             for(let j=1; j<this.bones.length; j++) {
                 
+                // Compute projection (a vector) of a point to a bones 
+                // (defined by two vectors), 
+                // and find the bone with the least distance
+
                 const projection = this.computeBoneProjection(i, j)
-                //console.log(projection);
 
                 const dist = Vector3.vecDistSquared(projection,0,this.pos,i);
-                //const dist = projection.distanceTo(particleVec);
-                //console.log(dist);
-
 
                 if(dist == 0)
                     console.log(projection, i, particleVec);
@@ -186,6 +193,7 @@ export class CylinderObject extends DeformableObject {
                     boneIdx = j;
                 }
             }
+            // Store all result in a typed array for future use
 
             this.closestBoneDistance[i] = minDist;
             this.closestBone[i] = boneIdx;
