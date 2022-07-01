@@ -36,13 +36,11 @@ async function getData(url) {
 
 // ------------------------------------------------------------------
 async function initPhysics() {
-    let meshData = await getData('assets/SuzanneTet.obj.json')
+    let meshData = await getData('assets/HomerTet.obj.json')
     let body = new DeformableObject(meshData, gThreeScene)
 
     gPhysicsScene.objects.push(body); 
 
-    for (let i = 0; i < gPhysicsScene.objects.length; i++)
-        numTets += gPhysicsScene.objects[i].numTets;  
 }
 
 async function initCylinder() {
@@ -50,10 +48,7 @@ async function initCylinder() {
     let body = new CylinderObject(meshData, gThreeScene);
 
     gPhysicsScene.objects.push(body); 
-
-    for (let i = 0; i < gPhysicsScene.objects.length; i++)
-        numTets += gPhysicsScene.objects[i].numTets;
-
+    
 }
 
 // ------------------------------------------------------------------
