@@ -1,6 +1,6 @@
 import * as THREE from 'three'
-import { DeformableObject } from './DeformableObject';
 import * as Vector3 from '../utils/VectorOperations.js'
+import { DeformableObject } from './DeformableObject';
 
 export class CylinderObject extends DeformableObject {
 

@@ -1,7 +1,18 @@
+
+# yarn related
 yarn.lock
 yarn-error.log
+
+# parcel related
 .parcel-cache
+
+# js modules
 node_modules
+
+# deployment related
 dist
 *.out
 repokey
+
+# vscode settings
+.vscode

@@ -72,6 +72,4 @@ export function vecDistLine(a, anr, b, bnr, c, cnr) {
     
     vecSetDiff(BminA, 0, b, bnr, a, anr, 1.0);
     vecSetDiff(CminA, 0, c, cnr, a, anr, 1.0);      
-
-
 }

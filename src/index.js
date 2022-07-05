@@ -5,9 +5,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { DeformableObject } from './graphics/DeformableObject'
-import { CylinderObject } from './graphics/CyclinderObject'
-import { Grabber } from './graphics/Grabber'
+import { Suzanne } from './objects/Suzanne'
+import { Grabber } from './objects/Grabber'
+import { physicsConstants, physicsParameters } from './utils/Parameters'
 
 let gThreeScene;
 let gRenderer;
@@ -15,19 +15,14 @@ let gComposer;
 let gCamera;
 let gCameraControl;
 let gGrabber;
-let gMouseDown = false;
 let gStatsMonitor;
+let gMouseDown = false;
+let gRuntimeObjects = {
+    objects : []
+}
+
 
 // ------------------------------------------------------------------
-
-let gPhysicsScene = 
-{
-    gravity : [0.0, -10.0, 0.0],
-    dt : 1.0 / 60.0,
-    numSubsteps : 5,
-    paused: false,
-    objects: [],				
-};
 
 async function getData(url) {
     const response = await fetch(url);
@@ -35,54 +30,20 @@ async function getData(url) {
 }
 
 // ------------------------------------------------------------------
-async function initPhysics() {
-    let meshData = await getData('assets/HomerTet.obj.json')
-    let body = new DeformableObject(meshData, gThreeScene)
+async function instantiateSuzanne() {
+    let meshData = await getData('assets/SuzanneTet.obj.json')
+    let suzanne = new Suzanne(meshData);
+    suzanne.initializeObjectMesh(gThreeScene);
 
-    gPhysicsScene.objects.push(body); 
-
+    gRuntimeObjects.objects.push(suzanne);
 }
 
 async function initCylinder() {
     let meshData = await getData('assets/CyclTet.obj.json')
-    let body = new CylinderObject(meshData, gThreeScene);
+    //let body = new CylinderObject(meshData);
 
-    gPhysicsScene.objects.push(body); 
-    
+    //gPhysicsScene.objects.push(body); 
 }
-
-// ------------------------------------------------------------------
-function simulate() 
-{
-        
-    let sdt = gPhysicsScene.dt / gPhysicsScene.numSubsteps;
-
-    for (let i = 0; i < gPhysicsScene.objects.length; i++) 
-        if(gPhysicsScene.objects[i].hasAnimation)
-            gPhysicsScene.objects[i].animateBones();
-
-    // If paused, dont continue to next step
-
-    if (gPhysicsScene.paused)
-        return;
-               
-    for (let step = 0; step < gPhysicsScene.numSubsteps; step++) {
-        
-        for (let i = 0; i < gPhysicsScene.objects.length; i++) 
-            gPhysicsScene.objects[i].preSolve(sdt, gPhysicsScene.gravity);
-        
-        for (let i = 0; i < gPhysicsScene.objects.length; i++) 
-            gPhysicsScene.objects[i].solve(sdt);
-
-        for (let i = 0; i < gPhysicsScene.objects.length; i++) 
-            gPhysicsScene.objects[i].postSolve(sdt);
-
-    }
-    
-    gGrabber.increaseTime(gPhysicsScene.dt);
-}
-
-// ------------------------------------------
         
 function initThreeScene() 
 {
@@ -201,7 +162,7 @@ function initGUI() {
     const elements = {
         subStep : 5,
         edgeCompliance : 50,
-        spawnPhysicsObject: initPhysics,
+        spawnPhysicsObject: instantiateSuzanne,
         spawnAnimatedObject: initCylinder,
         pausePhysics: false 
     }
@@ -210,7 +171,7 @@ function initGUI() {
     panel.add(elements, 'spawnAnimatedObject').name('Spawn Preanimated Object');
     panel.add(elements, 'pausePhysics').name('Pause Physics Simulation').listen()
         .onChange( value => {
-            gPhysicsScene.paused = value;
+            physicsParameters.paused = value;
         } 
     );
     panel.add(elements, 'subStep', 1, 10, 1).name('Substeps per Iteration').listen()
@@ -237,8 +198,13 @@ function onWindowResize() {
 // make browser to call us repeatedly -----------------------------------
 
 function update() {
-    simulate();
-    gComposer.render(gPhysicsScene.dt);
+    
+    gRuntimeObjects.objects.forEach(element => {
+        element.update();
+    }); 
+
+    gGrabber.increaseTime(physicsConstants.dt);
+    gComposer.render(physicsConstants.dt);
     gStatsMonitor.update()
     requestAnimationFrame(update);
 }
