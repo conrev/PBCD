@@ -284,6 +284,22 @@ export class DeformableBody {
     }
 
     startGrab(pos) {
+        /**
+         * Handler function to handle a start of a "grab"
+         * action. Called by the grabber class.
+         *
+         * the idea is to select the closest vertex
+         * to the grabber and assign infinite mass to it
+         *
+         * since object with infinite mass do not get
+         * affected by simulation, grabber has full control
+         * over its movement
+         *
+         * @param {Array} pos 3-sized array representing position
+         *                    of the grabber object.
+         *
+         */
+
         var p = [pos.x, pos.y, pos.z];
         var minD2 = Number.MAX_VALUE;
         this.grabId = -1;
@@ -302,14 +318,36 @@ export class DeformableBody {
         }
     }
 
-    moveGrabbed(pos, vel) {
+    moveGrabbed(pos) {
+        /**
+         * Handler function to move a grabbed vertex
+         *
+         * just set the position to the desired position
+         *
+         * @param {Array} pos desired pos of the grabbed vertex
+         *
+         */
+
         if (this.grabId >= 0) {
             var p = [pos.x, pos.y, pos.z];
             Vector3.vecCopy(this.pos, this.grabId, p, 0);
         }
     }
 
-    endGrab(pos, vel) {
+    endGrab(vel) {
+        /**
+         * Handler function to release a grabbed vertex
+         *
+         * reverse the mass assignment of grabbing, allowing
+         * the object to be affected by simulation once again
+         *
+         * velocity is passed because we want the vertex to maintain its previous
+         * velocity ("momentum") that came from it being grabbed around
+         *
+         * @param {Array} vel inertial velocity from the grabbing process
+         *
+         */
+
         if (this.grabId >= 0) {
             this.invMass[this.grabId] = this.grabInvMass;
             var v = [vel.x, vel.y, vel.z];
