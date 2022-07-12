@@ -1,6 +1,7 @@
 import * as THREE from 'three' 
 import Stats from 'three/examples/jsm/libs/stats.module'
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js'
@@ -8,6 +9,7 @@ import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer
 import { Suzanne } from './objects/Suzanne'
 import { Grabber } from './objects/Grabber'
 import { physicsConstants, physicsParameters } from './utils/Parameters'
+import { Character } from './objects/Character'
 
 let gThreeScene;
 let gRenderer;
@@ -20,7 +22,7 @@ let gMouseDown = false;
 let gRuntimeObjects = {
     objects : []
 }
-
+let gClock;
 
 // ------------------------------------------------------------------
 
@@ -31,8 +33,8 @@ async function getData(url) {
 
 // ------------------------------------------------------------------
 async function instantiateSuzanne() {
-    let meshData = await getData('assets/SuzanneTet.obj.json')
-    let suzanne = new Suzanne(meshData);
+    const meshData = await getData('assets/SuzanneTet.obj.json')
+    const suzanne = new Suzanne(meshData);
     suzanne.initializeObjectMesh(gThreeScene);
 
     gRuntimeObjects.objects.push(suzanne);
@@ -44,6 +46,15 @@ async function initCylinder() {
 
     //gPhysicsScene.objects.push(body); 
 }
+
+async function instantiateCharacter() {
+    const loader = new GLTFLoader();
+
+    const meshData = await loader.loadAsync('assets/CharacterA.glb');
+    const character = new Character(meshData);
+    character.initializeObjectMesh(gThreeScene);
+    gRuntimeObjects.objects.push(character);
+}
         
 function initThreeScene() 
 {
@@ -51,7 +62,7 @@ function initThreeScene()
     
     // Lights
     gThreeScene.background = new THREE.Color( 0xa0a0a0 );
-    gThreeScene.fog  = new THREE.Fog( 0xa0a0a0, 1, 50);
+    //gThreeScene.fog  = new THREE.Fog( 0xa0a0a0, 1, 50);
     
     const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
     hemiLight.position.set( 0, 20, 0 );
@@ -90,7 +101,7 @@ function initThreeScene()
 
     // Camera
             
-    gCamera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 100);
+    gCamera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 500);
     gCamera.position.set(0, 1, 2);
    
     gCamera.updateMatrixWorld();	
@@ -129,7 +140,8 @@ function initThreeScene()
     gStatsMonitor = Stats();
     container.appendChild(gStatsMonitor.domElement);
 
-
+    // graphics clock - delta measurement
+    gClock = new THREE.Clock();
 }
 
 function onPointer( evt ) 
@@ -164,11 +176,13 @@ function initGUI() {
         edgeCompliance : 50,
         spawnPhysicsObject: instantiateSuzanne,
         spawnAnimatedObject: initCylinder,
+        spawnAnimatedCharacter: instantiateCharacter,
         pausePhysics: false 
     }
     
     panel.add(elements, 'spawnPhysicsObject').name('Spawn Pure Physics Object');
     panel.add(elements, 'spawnAnimatedObject').name('Spawn Preanimated Object');
+    panel.add(elements, 'spawnAnimatedCharacter').name('Spawn Preanimated Character');
     panel.add(elements, 'pausePhysics').name('Pause Physics Simulation').listen()
         .onChange( value => {
             physicsParameters.paused = value;
@@ -200,7 +214,7 @@ function onWindowResize() {
 function update() {
     
     gRuntimeObjects.objects.forEach(element => {
-        element.update();
+        element.update(gClock.getDelta());
     }); 
 
     gGrabber.increaseTime(physicsConstants.dt);

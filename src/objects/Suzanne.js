@@ -48,7 +48,7 @@ export class Suzanne {
         scene.add(this.surfaceMesh);
     }
 
-    update() {
+    update(delta) {
         /**
          *
          * Method called at every frame
