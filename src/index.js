@@ -6,9 +6,9 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { Suzanne } from './objects/Suzanne'
+import { SandboxObject, Suzanne } from './objects/SandboxObject'
 import { Grabber } from './objects/Grabber'
-import { physicsConstants, physicsParameters } from './utils/Parameters'
+import { physicsConstants, physicsParameters, sandboxAssets } from './utils/Parameters'
 import { Character } from './objects/Character'
 
 let gThreeScene;
@@ -24,6 +24,9 @@ let gRuntimeObjects = {
 }
 let gClock;
 
+// workaround for lilgui not supporting function parameters
+let spawnedObjectName = sandboxAssets['Suzanne'];
+
 // ------------------------------------------------------------------
 
 async function getData(url) {
@@ -32,12 +35,12 @@ async function getData(url) {
 }
 
 // ------------------------------------------------------------------
-async function instantiateSuzanne() {
-    const meshData = await getData('assets/SuzanneTet.obj.json')
-    const suzanne = new Suzanne(meshData);
-    suzanne.initializeObjectMesh(gThreeScene);
+async function instiantiateSandboxObject() {
+    const meshData = await getData(spawnedObjectName)
+    const object = new SandboxObject(meshData);
+    object.initializeObjectMesh(gThreeScene);
 
-    gRuntimeObjects.objects.push(suzanne);
+    gRuntimeObjects.objects.push(object);
 }
 
 async function initCylinder() {
@@ -62,7 +65,7 @@ function initThreeScene()
     
     // Lights
     gThreeScene.background = new THREE.Color( 0xa0a0a0 );
-    //gThreeScene.fog  = new THREE.Fog( 0xa0a0a0, 1, 50);
+    gThreeScene.fog  = new THREE.Fog( 0xa0a0a0, 1, 50);
     
     const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
     hemiLight.position.set( 0, 20, 0 );
@@ -174,29 +177,39 @@ function initGUI() {
     const elements = {
         subStep : 5,
         edgeCompliance : 50,
-        spawnPhysicsObject: instantiateSuzanne,
+        spawnedSandbox : sandboxAssets['Suzanne'],
+        spawnPhysicsObject: instiantiateSandboxObject,
         spawnAnimatedObject: initCylinder,
         spawnAnimatedCharacter: instantiateCharacter,
         pausePhysics: false 
     }
-    
-    panel.add(elements, 'spawnPhysicsObject').name('Spawn Pure Physics Object');
-    panel.add(elements, 'spawnAnimatedObject').name('Spawn Preanimated Object');
-    panel.add(elements, 'spawnAnimatedCharacter').name('Spawn Preanimated Character');
-    panel.add(elements, 'pausePhysics').name('Pause Physics Simulation').listen()
+
+    panel.add(elements, 'spawnPhysicsObject').name('Spawn sandbox object');
+    panel.add(elements, 'spawnedSandbox', sandboxAssets).name('Object to spawn:').listen()
+        .onChange( value => {
+            spawnedObjectName = value;
+        }
+            
+    );
+    //  panel.add(elements, 'spawnAnimatedObject').name('Spawn Preanimated Object');
+    panel.add(elements, 'spawnAnimatedCharacter').name('Spawn preanimated character');
+
+    panel.add(elements, 'pausePhysics').name('Pause physics simulation').listen()
         .onChange( value => {
             physicsParameters.paused = value;
         } 
     );
-    panel.add(elements, 'subStep', 1, 10, 1).name('Substeps per Iteration').listen()
+    panel.add(elements, 'subStep', 1, 10, 1).name('Substeps per iteration').listen()
         .onChange( value => {
-            gPhysicsScene.numSubsteps = value;
+            physicsParameters.numSubsteps = value;
         } 
     );
-    panel.add(elements, 'edgeCompliance', 0, 500, 50).name('Edge Compliance').listen()
+    panel.add(elements, 'edgeCompliance', 0, 500, 50).name('Edge compliance').listen()
         .onChange( value => {
-            for (let i = 0; i < gPhysicsScene.objects.length; i++) 
-              gPhysicsScene.objects[i].edgeCompliance = value;
+            for (let i = 0; i < gRuntimeObjects.objects.length; i++) 
+            {
+                gRuntimeObjects.objects[i].body.edgeCompliance = value;    
+            }
         } 
     );
 }
