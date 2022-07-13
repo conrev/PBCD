@@ -6,7 +6,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { SandboxObject, Suzanne } from './objects/SandboxObject'
+import { SandboxObject } from './objects/SandboxObject'
 import { Grabber } from './objects/Grabber'
 import { physicsConstants, physicsParameters, sandboxAssets } from './utils/Parameters'
 import { Character } from './objects/Character'
@@ -34,7 +34,6 @@ async function getData(url) {
     return response.json();
 }
 
-// ------------------------------------------------------------------
 async function instiantiateSandboxObject() {
     const meshData = await getData(spawnedObjectName)
     const object = new SandboxObject(meshData);
@@ -43,17 +42,17 @@ async function instiantiateSandboxObject() {
     gRuntimeObjects.objects.push(object);
 }
 
-async function initCylinder() {
-    let meshData = await getData('assets/CyclTet.obj.json')
-    //let body = new CylinderObject(meshData);
+// async function instantiateDeformableCharacter() {
+//     let meshData = await getData('assets/CyclTet.obj.json')
+//     let body = new DeformableSkeletonBody(meshData);
 
-    //gPhysicsScene.objects.push(body); 
-}
+//     gRuntimeObjects.objects.push(body);
+// }
 
 async function instantiateCharacter() {
     const loader = new GLTFLoader();
 
-    const meshData = await loader.loadAsync('assets/CharacterA.glb');
+    const meshData = await loader.loadAsync('assets/Fox.glb');
     const character = new Character(meshData);
     character.initializeObjectMesh(gThreeScene);
     gRuntimeObjects.objects.push(character);
@@ -65,7 +64,7 @@ function initThreeScene()
     
     // Lights
     gThreeScene.background = new THREE.Color( 0xa0a0a0 );
-    gThreeScene.fog  = new THREE.Fog( 0xa0a0a0, 1, 50);
+    //gThreeScene.fog  = new THREE.Fog( 0xa0a0a0, 1, 50);
     
     const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
     hemiLight.position.set( 0, 20, 0 );
@@ -179,7 +178,6 @@ function initGUI() {
         edgeCompliance : 50,
         spawnedSandbox : sandboxAssets['Suzanne'],
         spawnPhysicsObject: instiantiateSandboxObject,
-        spawnAnimatedObject: initCylinder,
         spawnAnimatedCharacter: instantiateCharacter,
         pausePhysics: false 
     }

@@ -1,8 +1,8 @@
 import * as THREE from 'three'
 import * as Vector3 from '../utils/VectorOperations.js'
-import { DeformableObject } from './DeformableBody';
+import { DeformableBody } from './DeformableBody';
 
-export class CylinderObject extends DeformableObject {
+export class CylinderObject extends DeformableBody {
 
     createDisplayMesh(scene) {
         const segmentHeight = 0.5;
@@ -243,5 +243,28 @@ export class CylinderObject extends DeformableObject {
         this.solveVolumes(this.volCompliance, dt);
     }
 
+    update(delta) {
+        /**
+         *
+         * Method called at every frame
+         * run numSubSteps steps of physics simulation
+         * and update the object's meshes.
+         *
+         */
+        if (!this.active) return;
+        if (physicsParameters.paused) return;
 
+        let sdt = physicsConstants.dt / physicsParameters.numSubsteps;
+
+        for (let i = 0; i < physicsParameters.numSubsteps; i++) {
+            // The ordering might be a problem
+            this.body.preSolve(sdt, physicsConstants.gravity);
+
+            this.body.solve(sdt);
+
+            this.body.postSolve(sdt);
+        }
+
+        this.updateMeshes();
+    }
 }

@@ -6,7 +6,8 @@ export const physicsConstants  = {
 export const sandboxAssets = { 
     'Suzanne' : 'assets/SuzanneTet.obj.json',
     'Ortiz' : 'assets/OrtizTet.obj.json',
-    'Spot' : 'assets/SpotTet.obj.json'
+    'Spot' : 'assets/SpotTet.obj.json',
+    'Fox' : 'assets/FoxTet.obj.json'
 }
 
 export let physicsParameters = {

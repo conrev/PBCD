@@ -1,9 +1,11 @@
 import * as THREE from 'three'
+import { physicsConstants } from '../utils/Parameters';
 
 export class Character {
 
     constructor(meshData) {
-        this.mesh = meshData.scene.children[0];
+        console.log(meshData);
+        this.mesh = meshData.scene;
         this.animations = meshData.animations;
         this.clips = []
     }
@@ -11,8 +13,9 @@ export class Character {
     initializeObjectMesh(scene) {
 
         this.mesh.position.set(0,0,0);
+        this.mesh.scale.set(0.05,0.05,0.05);
         this.mixer = new THREE.AnimationMixer(this.mesh);
-        const action = this.mixer.clipAction(this.animations[2]);
+        const action = this.mixer.clipAction(this.animations[1]);
         action.play();
         
         this.clips.push(action);
@@ -21,7 +24,9 @@ export class Character {
     }
 
     update(delta) {
-        this.mixer.update( delta );
+        this.mixer.update( physicsConstants.dt );
 
     }
+
+    
 }

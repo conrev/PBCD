@@ -12,9 +12,10 @@
   },
    "scripts": {
     "clean-docs": "rm -rf docs && mkdir docs && mkdir docs/assets",
-    "copy-assets": "cp -r assets/* docs/assets",
-    "start": "yarn run clean-docs && yarn run copy-assets && parcel src/index.html",
-    "build-gh-pages": "yarn run clean-docs && yarn run copy-assets && parcel build src/index.html --public-url ./ --dist-dir docs",
+    "copy-assets-build": "cp -r assets/*.{glb,json} docs/assets",
+    "copy-assets-dev": "cp -r assets/*.{glb,json} dist/assets",
+    "start": "yarn run clean-docs && yarn run copy-assets-dev && parcel src/index.html",
+    "build-gh-pages": "yarn run clean-docs && yarn run copy-assets-build && parcel build src/index.html --public-url ./ --dist-dir docs",
     "playground" :"yarn run clean-docs && yarn run copy-assets && parcel src/fbxloader.html",
     "build": "parcel build"
   }
