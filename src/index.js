@@ -38,7 +38,7 @@ async function instiantiateSandboxObject() {
     const meshData = await getData(spawnedObjectName)
     const object = new SandboxObject(meshData);
     object.initializeObjectMesh(gThreeScene);
-
+    object.initializeAnimation();
     gRuntimeObjects.objects.push(object);
 }
 
@@ -54,6 +54,7 @@ async function instantiateCharacter() {
 
     const meshData = await loader.loadAsync('assets/Fox.glb');
     const character = new Character(meshData);
+
     character.initializeObjectMesh(gThreeScene);
     gRuntimeObjects.objects.push(character);
 }

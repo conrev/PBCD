@@ -5,7 +5,7 @@ export class DeformableBody {
         tetMesh,
         edgeCompliance = 50.0,
         volCompliance = 0.0,
-        dampingFactor = 1.0
+        dampingFactor = 1.0,
     ) {
         /**
          * Create a deformable body instance

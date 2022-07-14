@@ -48,6 +48,23 @@ export class SandboxObject {
         scene.add(this.surfaceMesh);
     }
 
+    initializeAnimation() {
+
+        const times = [0, 3, 6];
+        const positionValues = [0, 0, 0, 5, 5, 5, 0, 0, 0];
+
+        const positionKeyFrame = new THREE.VectorKeyframeTrack('.position',times, positionValues)
+
+        const tracks = [positionKeyFrame]
+
+        const clip = new THREE.AnimationClip('move', -1, tracks);
+
+        this.mixer = new THREE.AnimationMixer(this.surfaceMesh);
+        const moveAction = this.mixer.clipAction(clip);
+
+        moveAction.play();
+        
+    }
     update(delta) {
         /**
          *
@@ -57,10 +74,14 @@ export class SandboxObject {
          *
          */
         if (!this.active) return;
+        
+        this.mixer.update(physicsConstants.dt);
+        this.body.pos = this.surfaceMesh.geometry.attributes.position.array;
+
         if (physicsParameters.paused) return;
 
         let sdt = physicsConstants.dt / physicsParameters.numSubsteps;
-
+     
         for (let i = 0; i < physicsParameters.numSubsteps; i++) {
             // The ordering might be a problem
             this.body.preSolve(sdt, physicsConstants.gravity);

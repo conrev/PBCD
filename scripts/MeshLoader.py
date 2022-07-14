@@ -71,20 +71,47 @@ def read_OBJ(volumetric_file, surface_file):
 
 
 def read_MESH(mesh_file):
+    
+    result = {
+        "vertices" : [],
+        "tetFaceIds" : [],
+        "edgeList" : [],
+        "triFaceIds" : []
+    }
 
     with open(mesh_file) as f:
         contents = f.readlines()
         vertsIndex = vertsCount = 0
+        trisIndex  = trisCount = 0
+        tetsIndex = tetsCount = 0
+
         for i, line in enumerate(contents):
             if line.startswith('Vertices'):
                 vertsIndex = i
+            if line.startswith('Triangles'):
+                trisIndex = i
+            if line.startswith('Tetrahedra'):
+                tetsIndex = i
+        
         vertsCount = int(contents[vertsIndex+1])
-        print(vertsCount)
-        for i in range(vertsCount):
-            pass    
+        for i in range(1,vertsCount+1):
+            x, y, z, _ = contents[vertsIndex+1+i].replace('\n','').split(" ")
+            result["vertices"].extend([float(x),float(y) + 6.0,float(z)])
 
+        trisCount = int(contents[trisIndex+1])
+        for i in range(1,trisCount+1):
+            line = contents[trisIndex+1+i].replace('\n','').split(" ")[:3]
+            result["triFaceIds"].extend(map(lambda x: int(x) - 1,line)) # 0 indexed faces
 
+        tetsCount = int(contents[tetsIndex+1])
+        for i in range(1,tetsCount+1):
+            line = contents[tetsIndex+1+i].replace('\n','').split(" ")[:4]
+            result["tetFaceIds"].extend(map(lambda x: int(x) - 1,line)) # 0 indexed faces
 
+    if len(result["triFaceIds"])>0:
+        result["edgeList"] = build_unique_edges(result["triFaceIds"], False)
+
+    return result;
 
 if __name__ == "__main__":
     result = {}
