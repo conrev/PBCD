@@ -1,0 +1,270 @@
+import * as THREE from 'three'
+import * as Vector3 from '../utils/VectorOperations.js'
+import { DeformableBody } from './DeformableBody';
+
+export class CylinderObject extends DeformableBody {
+
+    createDisplayMesh(scene) {
+        const segmentHeight = 0.5;
+        const segmentCount = 8;
+        const height = segmentHeight * segmentCount;
+        const halfHeight = height * 0.5;
+
+        const sizing = {
+            segmentHeight: segmentHeight,
+            segmentCount: segmentCount,
+            height: height,
+            halfHeight: halfHeight
+        };
+
+        const geometry = this.createGeometry(sizing);
+        const bones = this.createBones(sizing);
+        const mesh = this.createMesh(geometry, bones, scene);
+
+        mesh.scale.multiplyScalar(1);
+        this.surfaceMesh = mesh;
+        this.bones = mesh.skeleton.bones;
+        this.surfaceMesh.geometry.computeVertexNormals();
+        this.surfaceMesh.userData = this;
+        this.surfaceMesh.layers.enable(1);
+        this.hasAnimation = true;
+
+        scene.add(this.surfaceMesh);
+        this.setupBoneConstraint(scene);
+
+    }
+
+    createGeometry(sizing) {
+        var geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(this.pos, 3));
+        geometry.setIndex(this.triIds);
+
+        const position = geometry.attributes.position;
+        const vertex = new THREE.Vector3();
+
+        const skinIndices = [];
+        const skinWeights = [];
+
+        for (let i = 0; i < position.count; i++) {
+
+            vertex.fromBufferAttribute(position, i);
+
+            const y = (vertex.y);
+
+            const skinIndex = Math.floor(y / sizing.segmentHeight);
+            const skinWeight = (y % sizing.segmentHeight) / sizing.segmentHeight;
+
+            skinIndices.push(skinIndex, skinIndex + 1, 0, 0);
+            skinWeights.push(1 - skinWeight, skinWeight, 0, 0);
+
+        }
+
+        geometry.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(skinIndices, 4));
+        geometry.setAttribute('skinWeight', new THREE.Float32BufferAttribute(skinWeights, 4));
+
+        return geometry;
+
+    }
+
+    createBones(sizing) {
+
+        let bones = [];
+
+        let prevBone = new THREE.Bone();
+        bones.push(prevBone);
+        prevBone.position.y = 0;
+
+        for (let i = 0; i < sizing.segmentCount; i++) {
+
+            const bone = new THREE.Bone();
+            bone.position.y = sizing.segmentHeight;
+            bones.push(bone);
+            prevBone.add(bone);
+            prevBone = bone;
+
+        }
+
+        return bones;
+
+    }
+
+    createMesh(geometry, bones) {
+
+        const material = new THREE.MeshPhongMaterial({
+            color: 0x156289,
+            emissive: 0x072534,
+            side: THREE.DoubleSide,
+            flatShading: true
+        });
+
+        const mesh = new THREE.SkinnedMesh(geometry, material);
+        const skeleton = new THREE.Skeleton(bones);
+
+        mesh.add(bones[0]);
+
+        mesh.bind(skeleton);
+
+        return mesh;
+
+    }
+
+    animateBones() {
+
+        const time = Date.now() * 0.005;
+
+        for (let i = 0; i < this.surfaceMesh.skeleton.bones.length; i++) {
+
+            this.surfaceMesh.skeleton.bones[i].rotation.z = Math.sin(time) * 2 / this.surfaceMesh.skeleton.bones.length;
+
+        }
+
+    }
+
+    computeBoneProjection(pointId, boneId) {
+
+        // Compute the projection of a point to a bone 
+        // (which is defined by a vector of itself and its parents)
+        // We do this by computing a projection of a point (vector) to a line(defined by two vectors)
+        // and clamp to result so that the resulting projection point go past the line
+
+        const boneVector = new THREE.Vector3();
+        const parentBoneVector = new THREE.Vector3();
+        const particleVec = new THREE.Vector3();
+        const startToParticleVec = new THREE.Vector3();
+
+        particleVec.fromBufferAttribute(this.surfaceMesh.geometry.attributes.position, pointId);
+
+        boneVector.setFromMatrixPosition(this.bones[boneId].matrixWorld);
+        parentBoneVector.setFromMatrixPosition(this.bones[boneId].parent.matrixWorld);
+
+        // Projection of a point to a line:
+        // C (point), A - B (line)
+        // C-A
+        startToParticleVec.subVectors(particleVec, parentBoneVector);
+        // B-A
+        boneVector.sub(parentBoneVector);
+
+        // Proj(C-A -> B-A)
+        let projection = startToParticleVec.projectOnVector(boneVector);
+
+        if (projection.dot(boneVector) < 0)
+            projection = parentBoneVector;  // clamp to start point
+        else if (projection.length() > boneVector.length())
+            projection = boneVector.add(parentBoneVector); // clamp to end point
+        else
+            projection.add(parentBoneVector);     // projection is between a and b
+
+        // console.log(this.surfaceMesh.geometry.attributes.position.array[i*3]+","+this.surfaceMesh.geometry.attributes.position.array[i*3+1]+","+this.surfaceMesh.geometry.attributes.position.array[i*3+2])
+        return new Float32Array([projection.x, projection.y, projection.z]);
+
+
+    }
+
+    setupBoneConstraint(scene) {
+        // This method set up bind constraint by computing distances of all vertex to its nearest bones
+        // (via vector projection)
+        // This precomputed distance act as "rest distance", or the distance our constraint will maintain
+
+        scene.updateMatrixWorld();
+
+        this.closestBoneDistance = new Float32Array(this.numParticles);
+        this.closestBone = new Float32Array(this.numParticles);
+
+        for (let i = 0; i < this.numParticles; i++) {
+
+            let minDist = Number.MAX_VALUE;
+            let boneIdx = 0;
+
+            for (let j = 1; j < this.bones.length; j++) {
+
+                // Compute projection (a vector) of a point to a bones 
+                // (defined by two vectors), 
+                // and find the bone with the least distance
+
+                const projection = this.computeBoneProjection(i, j)
+
+                const dist = Vector3.vecDistSquared(projection, 0, this.pos, i);
+
+                if (dist == 0)
+                    console.log(projection, i, particleVec);
+
+                if (dist < minDist) {
+                    minDist = dist;
+                    boneIdx = j;
+                }
+            }
+            // Store all result in a typed array for future use
+
+            this.closestBoneDistance[i] = minDist;
+            this.closestBone[i] = boneIdx;
+
+        }
+    }
+
+    solveBinding(compliance, dt) {
+        var alpha = compliance / dt / dt;
+
+        for (let i = 0; i < this.numParticles; i++) {
+            let w = this.invMass[i];
+
+            if (w == 0.0)
+                continue;
+
+            let closestBone = this.closestBone[i];
+            let restLen = this.closestBoneDistance[i];
+
+            let projection = this.computeBoneProjection(i, closestBone);
+
+            //console.log(projection);
+            Vector3.vecSetDiff(this.grads, 0, this.pos, i, projection, 0);
+
+            let len = Math.sqrt(Vector3.vecLengthSquared(this.grads, 0));
+
+            Vector3.vecScale(this.grads, 0, 1.0 / len);
+
+            if (len == 0.0)
+                continue;
+            let C = len - restLen;
+            //console.log(this.grads);
+
+            //console.log(this.grads);
+            Vector3.vecAdd(this.pos, i, this.grads, 0, - C / w);
+        }
+        //compute form all bones to all points;
+        //find the closest bone;
+        //mark /store it;
+        //recompute at every timestep
+        //run distance constraint
+    }
+
+    solve(dt) {
+        this.solveBinding(this.edgeCompliance, dt);
+        this.solveEdges(15.0, dt);
+        this.solveVolumes(this.volCompliance, dt);
+    }
+
+    update(delta) {
+        /**
+         *
+         * Method called at every frame
+         * run numSubSteps steps of physics simulation
+         * and update the object's meshes.
+         *
+         */
+        if (!this.active) return;
+        if (physicsParameters.paused) return;
+
+        let sdt = physicsConstants.dt / physicsParameters.numSubsteps;
+
+        for (let i = 0; i < physicsParameters.numSubsteps; i++) {
+            // The ordering might be a problem
+            this.body.preSolve(sdt, physicsConstants.gravity);
+
+            this.body.solve(sdt);
+
+            this.body.postSolve(sdt);
+        }
+
+        this.updateMeshes();
+    }
+}

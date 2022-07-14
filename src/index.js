@@ -1,13 +1,15 @@
 import * as THREE from 'three' 
 import Stats from 'three/examples/jsm/libs/stats.module'
 import { GUI } from 'three/examples/jsm/libs/lil-gui.module.min.js'
+import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls'
 import { RenderPass } from 'three/examples/jsm/postprocessing/RenderPass.js'
 import { BokehPass } from 'three/examples/jsm/postprocessing/BokehPass.js'
 import { EffectComposer } from 'three/examples/jsm/postprocessing/EffectComposer.js'
-import { DeformableObject } from './graphics/DeformableObject'
-import { CylinderObject } from './graphics/CyclinderObject'
-import { Grabber } from './graphics/Grabber'
+import { SandboxObject } from './objects/SandboxObject'
+import { Grabber } from './objects/Grabber'
+import { physicsConstants, physicsParameters, sandboxAssets } from './utils/Parameters'
+import { Character } from './objects/Character'
 
 let gThreeScene;
 let gRenderer;
@@ -15,74 +17,47 @@ let gComposer;
 let gCamera;
 let gCameraControl;
 let gGrabber;
-let gMouseDown = false;
 let gStatsMonitor;
+let gMouseDown = false;
+let gRuntimeObjects = {
+    objects : []
+}
+let gClock;
+
+// workaround for lilgui not supporting function parameters
+let spawnedObjectName = sandboxAssets['Suzanne'];
 
 // ------------------------------------------------------------------
-
-let gPhysicsScene = 
-{
-    gravity : [0.0, -10.0, 0.0],
-    dt : 1.0 / 60.0,
-    numSubsteps : 5,
-    paused: false,
-    objects: [],				
-};
 
 async function getData(url) {
     const response = await fetch(url);
     return response.json();
 }
 
-// ------------------------------------------------------------------
-async function initPhysics() {
-    let meshData = await getData('assets/HomerTet.obj.json')
-    let body = new DeformableObject(meshData, gThreeScene)
-
-    gPhysicsScene.objects.push(body); 
-
+async function instiantiateSandboxObject() {
+    const meshData = await getData(spawnedObjectName)
+    const object = new SandboxObject(meshData);
+    object.initializeObjectMesh(gThreeScene);
+    object.initializeAnimation();
+    gRuntimeObjects.objects.push(object);
 }
 
-async function initCylinder() {
-    let meshData = await getData('assets/CyclTet.obj.json')
-    let body = new CylinderObject(meshData, gThreeScene);
+// async function instantiateDeformableCharacter() {
+//     let meshData = await getData('assets/CyclTet.obj.json')
+//     let body = new DeformableSkeletonBody(meshData);
 
-    gPhysicsScene.objects.push(body); 
-    
+//     gRuntimeObjects.objects.push(body);
+// }
+
+async function instantiateCharacter() {
+    const loader = new GLTFLoader();
+
+    const meshData = await loader.loadAsync('assets/Fox.glb');
+    const character = new Character(meshData);
+
+    character.initializeObjectMesh(gThreeScene);
+    gRuntimeObjects.objects.push(character);
 }
-
-// ------------------------------------------------------------------
-function simulate() 
-{
-        
-    let sdt = gPhysicsScene.dt / gPhysicsScene.numSubsteps;
-
-    for (let i = 0; i < gPhysicsScene.objects.length; i++) 
-        if(gPhysicsScene.objects[i].hasAnimation)
-            gPhysicsScene.objects[i].animateBones();
-
-    // If paused, dont continue to next step
-
-    if (gPhysicsScene.paused)
-        return;
-               
-    for (let step = 0; step < gPhysicsScene.numSubsteps; step++) {
-        
-        for (let i = 0; i < gPhysicsScene.objects.length; i++) 
-            gPhysicsScene.objects[i].preSolve(sdt, gPhysicsScene.gravity);
-        
-        for (let i = 0; i < gPhysicsScene.objects.length; i++) 
-            gPhysicsScene.objects[i].solve(sdt);
-
-        for (let i = 0; i < gPhysicsScene.objects.length; i++) 
-            gPhysicsScene.objects[i].postSolve(sdt);
-
-    }
-    
-    gGrabber.increaseTime(gPhysicsScene.dt);
-}
-
-// ------------------------------------------
         
 function initThreeScene() 
 {
@@ -90,7 +65,7 @@ function initThreeScene()
     
     // Lights
     gThreeScene.background = new THREE.Color( 0xa0a0a0 );
-    gThreeScene.fog  = new THREE.Fog( 0xa0a0a0, 1, 50);
+    //gThreeScene.fog  = new THREE.Fog( 0xa0a0a0, 1, 50);
     
     const hemiLight = new THREE.HemisphereLight( 0xffffff, 0x444444 );
     hemiLight.position.set( 0, 20, 0 );
@@ -129,7 +104,7 @@ function initThreeScene()
 
     // Camera
             
-    gCamera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 100);
+    gCamera = new THREE.PerspectiveCamera( 70, window.innerWidth / window.innerHeight, 0.1, 500);
     gCamera.position.set(0, 1, 2);
    
     gCamera.updateMatrixWorld();	
@@ -168,7 +143,8 @@ function initThreeScene()
     gStatsMonitor = Stats();
     container.appendChild(gStatsMonitor.domElement);
 
-
+    // graphics clock - delta measurement
+    gClock = new THREE.Clock();
 }
 
 function onPointer( evt ) 
@@ -201,27 +177,38 @@ function initGUI() {
     const elements = {
         subStep : 5,
         edgeCompliance : 50,
-        spawnPhysicsObject: initPhysics,
-        spawnAnimatedObject: initCylinder,
+        spawnedSandbox : sandboxAssets['Suzanne'],
+        spawnPhysicsObject: instiantiateSandboxObject,
+        spawnAnimatedCharacter: instantiateCharacter,
         pausePhysics: false 
     }
-    
-    panel.add(elements, 'spawnPhysicsObject').name('Spawn Pure Physics Object');
-    panel.add(elements, 'spawnAnimatedObject').name('Spawn Preanimated Object');
-    panel.add(elements, 'pausePhysics').name('Pause Physics Simulation').listen()
+
+    panel.add(elements, 'spawnPhysicsObject').name('Spawn sandbox object');
+    panel.add(elements, 'spawnedSandbox', sandboxAssets).name('Object to spawn:').listen()
         .onChange( value => {
-            gPhysicsScene.paused = value;
+            spawnedObjectName = value;
+        }
+            
+    );
+    //  panel.add(elements, 'spawnAnimatedObject').name('Spawn Preanimated Object');
+    panel.add(elements, 'spawnAnimatedCharacter').name('Spawn preanimated character');
+
+    panel.add(elements, 'pausePhysics').name('Pause physics simulation').listen()
+        .onChange( value => {
+            physicsParameters.paused = value;
         } 
     );
-    panel.add(elements, 'subStep', 1, 10, 1).name('Substeps per Iteration').listen()
+    panel.add(elements, 'subStep', 1, 10, 1).name('Substeps per iteration').listen()
         .onChange( value => {
-            gPhysicsScene.numSubsteps = value;
+            physicsParameters.numSubsteps = value;
         } 
     );
-    panel.add(elements, 'edgeCompliance', 0, 500, 50).name('Edge Compliance').listen()
+    panel.add(elements, 'edgeCompliance', 0, 500, 50).name('Edge compliance').listen()
         .onChange( value => {
-            for (let i = 0; i < gPhysicsScene.objects.length; i++) 
-              gPhysicsScene.objects[i].edgeCompliance = value;
+            for (let i = 0; i < gRuntimeObjects.objects.length; i++) 
+            {
+                gRuntimeObjects.objects[i].body.edgeCompliance = value;    
+            }
         } 
     );
 }
@@ -237,8 +224,13 @@ function onWindowResize() {
 // make browser to call us repeatedly -----------------------------------
 
 function update() {
-    simulate();
-    gComposer.render(gPhysicsScene.dt);
+    
+    gRuntimeObjects.objects.forEach(element => {
+        element.update(gClock.getDelta());
+    }); 
+
+    gGrabber.increaseTime(physicsConstants.dt);
+    gComposer.render(physicsConstants.dt);
     gStatsMonitor.update()
     requestAnimationFrame(update);
 }
