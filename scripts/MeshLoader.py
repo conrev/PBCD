@@ -33,7 +33,8 @@ def read_OBJ(volumetric_file, surface_file):
         "vertices" : [],
         "tetFaceIds" : [],
         "edgeList" : [],
-        "triFaceIds" : []
+        "triFaceIds" : [],
+        "triVerts" : []
     }
     
     with open(volumetric_file) as f:
@@ -54,10 +55,15 @@ def read_OBJ(volumetric_file, surface_file):
     with open(surface_file) as f:
         contents = f.readlines()
         for line in contents:
+            if line[0:2] == 'v ':
+                type, x, y, z = line.replace('\n','').split(" ")
+                if type == 'v':
+                    result["triVerts"].extend([float(x),float(y),float(z)])
+                else:
+                    pass
             if line.startswith('f'):
                 components = line.replace('\n','').split(" ")
                 if len(components) == 4:
-                    # Quads OBJ
                     result["triFaceIds"].extend(list(map(extract_faces,components[1:])))
                 else:
                     print(components)

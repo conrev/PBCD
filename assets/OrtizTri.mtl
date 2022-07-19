@@ -1,8 +1,8 @@
-# Blender 3.2.1 MTL File: 'CharacterA.blend'
-# www.blender.org
+# Blender MTL File: 'None'
+# Material Count: 1
 
 newmtl Ch43_Body.002
-Ns 200.000000
+Ns 199.999995
 Ka 0.500000 0.500000 0.500000
 Kd 1.000000 1.000000 1.000000
 Ks 1.000000 1.000000 1.000000
@@ -10,7 +10,6 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.450000
 d 1.000000
 illum 3
+map_Bump Ch43_1001_Normal.png
 map_Kd Ch43_1001_Diffuse.png
 map_Ks Ch43_1001_Specular.png
-map_Ns Ch43_1001_Glossiness.png
-map_Bump -bm 1.000000 Ch43_1001_Normal.png

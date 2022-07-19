@@ -81,7 +81,7 @@ export function matSetInverse(A) {
     let det = matGetDeterminant(A);
     if (det == 0.0) {
         for (let i = 0; i < 9; i++)
-            A[anr + i] = 0.0;
+            A[i] = 0.0;
             return;
     }
     let invDet = 1.0 / det;

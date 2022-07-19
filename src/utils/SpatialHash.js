@@ -5,7 +5,7 @@
  * https://github.com/matthias-research/pages/blob/master/tenMinutePhysics/12-softBodySkinning.html
  */
 
-class SpatialHash {
+export class SpatialHash {
     constructor(spacing, maxNumObjects) 
     {
         this.spacing = spacing;
