@@ -1,9 +1,10 @@
 export const physicsConstants  = {
-    gravity : [0.0, 0.0, 0.0],
+    gravity : [0.0, -10.0, 0.0],
     dt : 1.0 / 60.0,
 }
 
 export const sandboxAssets = { 
+    'Dragon' : 'assets/Dragon.obj.json',
     'Suzanne' : 'assets/SuzanneTet.obj.json',
     'Ortiz' : 'assets/OrtizTet.obj.json',
     'Spot' : 'assets/SpotTet.obj.json',

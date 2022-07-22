@@ -1,4 +1,5 @@
 import * as THREE from "three";
+import * as FlatMath from "../utils/MathOperations"
 import { DeformableBody } from "../physics/DeformableBody";
 import { physicsConstants, physicsParameters } from "../utils/Parameters";
 
@@ -32,20 +33,31 @@ export class SandboxObject {
             "position",
             new THREE.BufferAttribute(this.body.pos, 3)
         );
+        geometry.setIndex(this.body.edgeIds);
+        var lineMaterial = new THREE.LineBasicMaterial({color: 0xffffff, linewidth: 2});
+        this.tetMesh = new THREE.LineSegments(geometry, lineMaterial);
+        this.tetMesh.visible = true;
+
+
+        geometry = new THREE.BufferGeometry();
+        geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(3 * this.body.numVisVerts), 3));
         geometry.setIndex(this.body.triIds);
+        var visMaterial = new THREE.MeshPhongMaterial({color: 0xf78a1d});
+        this.visMesh = new THREE.Mesh(geometry, visMaterial);
+        this.visMesh.castShadow = true;
+        this.visMesh.userData = this.body;	// for raycasting
+        this.visMesh.layers.enable(1);
 
-        var material = new THREE.MeshPhongMaterial({ color: 0xf02000 });
-        material.flatShading = true;
-        this.surfaceMesh = new THREE.Mesh(geometry, material);
-        this.surfaceMesh.castShadow = true;
-        this.surfaceMesh.geometry.computeVertexNormals();
-        this.surfaceMesh.userData = this.body;
-        this.surfaceMesh.layers.enable(1);
-
+        geometry.computeVertexNormals();
+        this.updateVisMesh();
+        
         // start updating position every timestep.
         this.active = true;
+        scene.add(this.tetMesh);
+        this.tetMesh.visible = false;
+        scene.add(this.visMesh);
 
-        scene.add(this.surfaceMesh);
+
     }
 
     initializeAnimation() {
@@ -59,10 +71,10 @@ export class SandboxObject {
 
         const clip = new THREE.AnimationClip('move', -1, tracks);
 
-        this.mixer = new THREE.AnimationMixer(this.surfaceMesh);
+        this.mixer = new THREE.AnimationMixer(this.visMesh);
         const moveAction = this.mixer.clipAction(clip);
 
-        moveAction.play();
+       // moveAction.play();
         
     }
     update(delta) {
@@ -75,8 +87,7 @@ export class SandboxObject {
          */
         if (!this.active) return;
         
-        this.mixer.update(physicsConstants.dt);
-        this.body.pos = this.surfaceMesh.geometry.attributes.position.array;
+//        this.mixer.update(physicsConstants.dt);
 
         if (physicsParameters.paused) return;
 
@@ -102,8 +113,46 @@ export class SandboxObject {
          *
          */
 
-        this.surfaceMesh.geometry.computeVertexNormals();
-        this.surfaceMesh.geometry.attributes.position.needsUpdate = true;
-        this.surfaceMesh.geometry.computeBoundingSphere();
+        this.updateTetMesh();
+        this.updateVisMesh();
     }
+
+    updateTetMesh()
+	{
+        const positions = this.tetMesh.geometry.attributes.position.array;
+        for (let i = 0; i < this.body.pos.length; i++) 
+            positions[i] = this.body.pos[i];
+        this.tetMesh.geometry.attributes.position.needsUpdate = true;
+        this.tetMesh.geometry.computeBoundingSphere();
+	}	
+
+    updateVisMesh()
+    {
+        const positions = this.visMesh.geometry.attributes.position.array;
+        var nr = 0;
+        for (let i = 0; i < this.body.numVisVerts; i++) {
+            var tetNr = this.body.skinningInfo[nr++] * 4;
+            if (tetNr < 0) {
+                nr += 3;
+                continue;
+            }
+            var b0 = this.body.skinningInfo[nr++];
+            var b1 = this.body.skinningInfo[nr++];
+            var b2 = this.body.skinningInfo[nr++];
+            var b3 = 1.0 - b0 - b1 - b2;
+            var id0 = this.body.tetIds[tetNr++];
+            var id1 = this.body.tetIds[tetNr++];
+            var id2 = this.body.tetIds[tetNr++];
+            var id3 = this.body.tetIds[tetNr++];
+            FlatMath.vecSetZero(positions,i);
+            FlatMath.vecAdd(positions,i, this.body.pos,id0, b0);
+            FlatMath.vecAdd(positions,i, this.body.pos,id1, b1);
+            FlatMath.vecAdd(positions,i, this.body.pos,id2, b2);
+            FlatMath.vecAdd(positions,i, this.body.pos,id3, b3);
+        }
+        this.visMesh.geometry.computeVertexNormals();
+        this.visMesh.geometry.attributes.position.needsUpdate = true;
+        this.visMesh.geometry.computeBoundingSphere();
+    }			
+    
 }
