@@ -6,13 +6,9 @@
 
 The following videos are animation generated through PBCD simulation:
 
-*Built in ThreeJS renderer* | *fully rendered in Blender Cycles*
+*Built in ThreeJS renderer* | *Fully rendered in Blender Cycles*
 :---:|:---:
-https://user-images.githubusercontent.com/18559322/185099268-d87b61ba-1038-429b-80b1-fde164e61070.mp4|https://user-images.githubusercontent.com/18559322/185096949-d2ba5b2d-79f1-41b3-a596-d6ca390e769f.mp4
-
-
-
-
+<video src="https://user-images.githubusercontent.com/18559322/185100765-b17ca768-109b-4c84-a029-6f826d44bad9.mp4">|<video src="https://user-images.githubusercontent.com/18559322/185100705-adff326d-47f9-4b40-b56b-5ef0d1e408a2.mp4">
 
 
 ## Build Instructions
