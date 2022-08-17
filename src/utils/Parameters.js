@@ -1,18 +1,15 @@
-export const physicsConstants  = {
-    gravity : [0.0, -10.0, 0.0],
-    dt : 1.0 / 60.0,
-}
+export const physicsConstants = {
+	dt: 1.0 / 60.0,
+};
 
-export const sandboxAssets = { 
-    'Dragon' : 'assets/Dragon.obj.json',
-    'Suzanne' : 'assets/SuzanneTet.obj.json',
-    'Ortiz' : 'assets/OrtizTet.obj.json',
-    'Spot' : 'assets/SpotTet.obj.json',
-    'Fox' : 'assets/FoxTet.obj.json',
-    'Elephant' : 'assets/FishTet.obj.json'
-}
+export const sandboxAssets = {
+	Dragon: "assets/Dragon.obj.json",
+	Suzanne: "assets/SuzanneTet.obj.json",
+};
 
 export let physicsParameters = {
-    paused : false,
-    numSubsteps : 5
-}
+	paused: false,
+	numSubsteps: 5,
+	gravity: [0.0, -10.0, 0.0],
+	dampingFactor: 0.995,
+};
