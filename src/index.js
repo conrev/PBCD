@@ -175,7 +175,7 @@ function initGUI() {
 	const elements = {
 		subStep: 5,
 		edgeCompliance: 50,
-		spawnedSandbox: sandboxAssets["Suzanne"],
+		spawnedSandbox: sandboxAssets["Dragon"],
 		spawnPhysicsObject: instiantiateSandboxObject,
 		spawnAnimatedCharacter: instantiateCharacter,
 		pausePhysics: false,

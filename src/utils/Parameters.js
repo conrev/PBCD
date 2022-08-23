@@ -5,6 +5,8 @@ export const physicsConstants = {
 export const sandboxAssets = {
 	Dragon: "assets/Dragon.obj.json",
 	Suzanne: "assets/SuzanneTet.obj.json",
+	Spot: "assets/CowTet.obj.json",
+	Armadillo: "assets/ArmaTet.obj.json",
 };
 
 export let physicsParameters = {
